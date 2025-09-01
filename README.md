@@ -10,13 +10,27 @@ It serves multiple purposes:
 
 ## Repo Structure
 
+```
 knowledgewiki/
-├── README.md # This file
-├── docs/ # All Markdown notes and content
-├── docusaurus.config.js
-├── sidebars.js
-├── package.json
-└── .github/workflows # CI/CD for auto-deploying the website
+├── README.md                 # This file
+├── docs/                     # All Markdown notes and content
+│   ├── intro.md
+│   ├── rust/
+│   │   ├── ownership.md
+│   │   └── traits.md
+│   ├── tools/
+│   │   ├── tmux.md
+│   │   ├── neovim.md
+│   │   └── glow.md
+│   └── ai/
+│       └── claude_code.md
+├── docusaurus.config.js      # Docusaurus configuration
+├── sidebars.js               # Sidebar configuration
+├── package.json              # Dependencies and scripts
+├── static/                   # Static assets
+├── src/                      # Custom components and pages
+└── .github/workflows/        # CI/CD for auto-deploying the website
+```
 
 ## How to Use
 
