@@ -48,7 +48,7 @@ const config = {
       ({
         docs: {
           sidebarPath: './sidebars.js',
-          routeBasePath: '/', // Serve docs at the root
+          // routeBasePath: '/', // Serve docs at the root - removed to use default /docs
         },
         blog: false, // Disable the blog
         theme: {
@@ -91,7 +91,7 @@ const config = {
             items: [
               {
                 label: 'Notes',
-                to: '/intro',
+                to: '/docs/intro',
               },
             ],
           },

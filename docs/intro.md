@@ -1,7 +1,3 @@
----
-slug: /
----
-
 # The Knowledge Wiki
 
 The knowledge wiki is a centralized notes repo for anything I have learnt and am currently learning. Each folder represents a topic of interest with markdown files serving as individual sections within that topic. The repo serves as an active "learning log" that will continually evolve and grow as I learn new tid bits and add them into the markdown pages. The goal is to capture, organize, and revisit these notes with the assistance of AI tools, to enable a powerful learning workflow.
