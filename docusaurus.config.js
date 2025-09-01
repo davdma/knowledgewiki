@@ -30,7 +30,7 @@ const config = {
   organizationName: 'davdma', // Usually your GitHub org/user name.
   projectName: 'knowledgewiki', // Usually your repo name.
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
 
   // Even if you don't use internationalization, you can use this field to set
@@ -77,7 +77,7 @@ const config = {
             label: 'Notes',
           },
           {
-            href: 'https://github.com/facebook/docusaurus',
+            href: 'https://github.com/davdma/knowledgewiki',
             label: 'GitHub',
             position: 'right',
           },
@@ -91,24 +91,7 @@ const config = {
             items: [
               {
                 label: 'Notes',
-                to: '/docs/intro',
-              },
-            ],
-          },
-          {
-            title: 'Community',
-            items: [
-              {
-                label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/docusaurus',
-              },
-              {
-                label: 'Discord',
-                href: 'https://discordapp.com/invite/docusaurus',
-              },
-              {
-                label: 'X',
-                href: 'https://x.com/docusaurus',
+                to: 'docs/intro',
               },
             ],
           },
@@ -117,12 +100,12 @@ const config = {
             items: [
               {
                 label: 'GitHub',
-                href: 'https://github.com/facebook/docusaurus',
+                href: 'https://github.com/davdma/knowledgewiki',
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} David Ma. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,
