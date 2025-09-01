@@ -1,41 +1,26 @@
-# Website
+---
+slug: /
+---
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
+# The Knowledge Wiki
 
-## Installation
+The knowledge wiki is a centralized notes repo for anything I have learnt and am currently learning. Each folder represents a topic of interest with markdown files serving as individual sections within that topic. The repo serves as an active "learning log" that will continually evolve and grow as I learn new tid bits and add them into the markdown pages. The goal is to capture, organize, and revisit these notes with the assistance of AI tools, to enable a powerful learning workflow.
 
-```bash
-yarn
+```text
+# make this prettier
+rust/
+  ownership.md
+  traits.md
+tools/
+  tmux.md
+  neovim.md
+  glow.md
+ai/
+  claude_code.md
 ```
 
-## Local Development
+A core feature of the knowledge wiki is the simplicity and ease of access for LLMs and AI tools like Claude Code. Besides allowing AI tools to crawl through my directory and notes to generate summaries or answer queries, the repo can also be exported through tools like [gitingest](https://gitingest.com/) for external LLMs input.
 
-```bash
-yarn start
-```
+# Usage
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
-
-## Build
-
-```bash
-yarn build
-```
-
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
-
-## Deployment
-
-Using SSH:
-
-```bash
-USE_SSH=true yarn deploy
-```
-
-Not using SSH:
-
-```bash
-GIT_USER=<Your GitHub username> yarn deploy
-```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+Use `glow` to display markdown files in the terminal.
