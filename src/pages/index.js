@@ -13,6 +13,17 @@ function HomepageHeader() {
         <p className="hero__subtitle">
           A knowledge repository for David's notes, built for easy browsing and active learning.
         </p>
+        <div className={styles.bookContainer}>
+          <div className={styles.book3d}>
+            <div className={styles.bookFront}></div>
+            <div className={styles.bookBack}></div>
+            <div className={styles.bookSpine}></div>
+            <div className={styles.bookTop}></div>
+            <div className={styles.bookBottom}></div>
+            <div className={styles.bookRight}></div>
+          </div>
+          <div className={styles.bookShadow}></div>
+        </div>
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"

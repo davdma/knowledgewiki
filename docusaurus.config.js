@@ -87,20 +87,19 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Notes',
+            title: 'Links',
             items: [
               {
-                label: 'Notes',
-                to: 'docs/intro',
+                label: 'Personal Website',
+                href: 'https://davidma.me',
               },
-            ],
-          },
-          {
-            title: 'More',
-            items: [
+              {
+                label: 'Blog',
+                href: 'https://davidma.me/blog/',
+              },
               {
                 label: 'GitHub',
-                href: 'https://github.com/davdma/knowledgewiki',
+                href: 'https://github.com/davdma',
               },
             ],
           },
