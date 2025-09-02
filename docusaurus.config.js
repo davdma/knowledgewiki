@@ -12,7 +12,7 @@ import {themes as prismThemes} from 'prism-react-renderer';
 const config = {
   title: 'David Ma',
   tagline: 'Dinosaurs are cool',
-  favicon: 'img/books.svg',
+  favicon: 'img/books.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
