@@ -1,0 +1,63 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Getting Started
+
+This might be a rite of passage for developers, but the hardest part about picking up Neovim (and vim, in general) is getting in the habit of using the proper key bind motions. There is a certain rhythm or pattern that vim is designed for that makes programming in the terminal effortless, but it does require a substantial amount of practice to adopt. One thing that jumps out at me all the time is the fact that there are so many different keys that it is impossible to try to memorize them - you must learn by using it over and over until it becomes muscle memory.
+
+The best way to start is with vim tutor. In neovim you just type `:Tutor` and the vim tutor window will come up. It's an especially good spot to jumpstart learning when you know absolutely nothing. I even have found myself going back to it when I feel the need for a good refresher. The only caveat is that vim tutor is quite sparse and certain cool functionalities like using nvim plugins and LSPs are not included.
+
+# Basics
+
+There are three modes to be aware of: <BlueHighlight>Normal</BlueHighlight> (default), <BlueHighlight>Insert</BlueHighlight> (toggled with i), and <BlueHighlight>Visual</BlueHighlight> mode (toggled with v). Normal mode is actually very powerful, although it can be frustrating at first without knowing the key commands - it allows you to jump around the file, search, delete, undo etc. and all sorts of other patterns. Insert mode is good for typing in the file, so if you want to start editing the file you might jump right to insert. Visual mode is used to select chunks of text, and then applying normal mode commands to a large chunk at once (indent, change case, delete).
+
+:::info[Key Idea]
+An intuitive way to think about <BlueHighlight>Visual</BlueHighlight> mode is that it allows you to apply normal mode commands to a selected chunk of text rather than just the cursor position. Instead of a command affecting a single character or line, you can select exactly what you want to modify and then apply the same commands you'd use in normal mode.
+:::
+
+## Movement with hjkl
+
+One of the fundamental aspects of vim is using `hjkl` keys for movement instead of arrow keys. The `h`, `j`, `k`, `l` keys move left, down, up, and right respectively. This might feel awkward at first, but it's crucial because it keeps your hands on the home row and allows for much faster navigation once you develop the muscle memory. In my configuration, I've actually disabled the arrow keys entirely to enforce learning proper vim movement - this forces you to build the right habits from the start rather than falling back to familiar but inefficient patterns. 
+
+## Expanded movement
+
+One of the first things to make moving around much more efficient rather than holding down the `hjkl` keys is word and line movement. Move forward and back through words with `w` and `b` respectively. Move to end of word with `e`. Move to start and end of file with `0` and `$` respectively. Move to the top and bottom of the file with `gg` and `G` respectively, and to a specific line number with `457G`. Press `^` to move to first non-blank character of a line if you are positioned at the beginning of an indented line.
+
+Prefix with a number to repeat that movement action N times, so `10w` will move 10 words down. Typing `2$` will move to the end of line of the second line. The point of using these numbers is not only to enable precision but also to accelerate movement speed around the file.
+
+## Inserts
+
+Keys are also meant for speedy inserts, so you don't have to position the cursor at the correct spot in normal mode before pressing `i` to go into insert mode. For instance, you can jump to insert mode at the end of the line with `A` (think short for append). Jump to insert mode on a new line below the cursor with `o` (newline above with `O`). A good key to also know is to insert after cursor position with `a` as opposed to before cursor position with `i` (so I'll sometimes use `a` over `i` at my cursor position).
+
+## Deletes
+
+For minor character deletes, this is provided with `x`. But the <GreenHighlight>most useful keystroke early on for deleting an entire line</GreenHighlight> is `dd`. You can delete multiple lines with number prefixes like `5dd`.
+
+`d` is an <BlueHighlight>operator</BlueHighlight> that follows vim's <BlueHighlight>operator-motion paradigm</BlueHighlight>. An operator performs an action, and when combined with a motion (which defines where to apply the action), you can efficiently edit text. For example: `dw` deletes a word, `d$` deletes to the end of line, `d0` deletes to the beginning of line.
+
+## Yanking and Pasting
+
+<BlueHighlight>Yanking</BlueHighlight> is vim's term for copying text, and it works seamlessly with vim's operator-motion paradigm. Use `y` as the yank operator followed by a motion to specify what to copy. For example: `yw` yanks a word, `y$` yanks to the end of line, `yy` (or `Y`) yanks the entire current line.
+
+:::tip[Trick]
+You can use <BlueHighlight>Visual mode</BlueHighlight> to precisely select what you want to yank. Press `v` to enter visual mode, use movement keys to select the desired text, then press `y` to yank the selection. This is especially useful for copying irregular chunks of text that don't align neatly with word or line boundaries.
+:::
+
+Once you've yanked text, use `p` to <GreenHighlight>paste after the cursor</GreenHighlight> (or below the current line for full lines). Use `P` to <GreenHighlight>paste before the cursor</GreenHighlight> (or above the current line for full lines).
+
+:::note[Detail]  
+When you delete with `dd`, the deleted text isn't just removed - it's automatically stored in vim's register, making it available for pasting with `p`. This means `dd` followed by `p` effectively moves a line rather than just deleting it. The same principle applies to other delete operations like `dw` or `d$`.
+:::
+
+You can also combine yanking with number prefixes for efficiency: `3yy` yanks 3 lines starting from the current line, `5yw` yanks 5 words forward.
+
+## Search
+
+Search is a functionality to get acquainted with early on because it will make life much easier navigating a larger document. Simply search by typing `/pattern` in Normal mode, where `pattern` is the word that you are looking for. By default this will match any and all occurrences of the word pattern even if it is embedded within a larger word. This might be a headache say if you are looking for the word `rad` but then it highlights all the instances of `brad`, `trad` in traditional, `rad` in radical. To avoid this issue, use `\<` and `\>` for matching the start and end, so `/\<pattern\>`. Once you hit enter, you can toggle through next and previous search results with `n` and `N` respectively.
+
+## Undo
+
+Undo an action with `u` key. Undo an entire line to its original state with `U`. This is useful when you've made so many changes that the line is completely corrupted, and you'd just want to reset.
+
+## Change Operations
+
+A useful keystroke to simply replace the word under the cursor is `cw` or `ce` to change until end of word. The key `c` is the <BlueHighlight>change operator</BlueHighlight>, which will delete everything you motion it to change and then place you into insert mode. It will be useful to do `c [number] motion` e.g. `c5$`. You can also replace character at cursor position with `r` followed by the character you want to replace it with. For replacing larger chunks of text, use `R` to enter <BlueHighlight>Replace</BlueHighlight> mode. 

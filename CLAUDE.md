@@ -118,7 +118,7 @@ For `.mdx` files, add these imports at the top of the file:
 import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
 
 Then use:
-- `<BlueHighlight>key term</BlueHighlight>` for key terms
+- `<BlueHighlight>key term</BlueHighlight>` for key terms (wrap only the specific term, not entire phrases or explanations)
 - `<GreenHighlight>important details</GreenHighlight>` for details that aid understanding
 
 #### Interactive Elements
