@@ -18,11 +18,29 @@ An intuitive way to think about <BlueHighlight>Visual</BlueHighlight> mode is th
 
 One of the fundamental aspects of vim is using `hjkl` keys for movement instead of arrow keys. The `h`, `j`, `k`, `l` keys move left, down, up, and right respectively. This might feel awkward at first, but it's crucial because it keeps your hands on the home row and allows for much faster navigation once you develop the muscle memory. In my configuration, I've actually disabled the arrow keys entirely to enforce learning proper vim movement - this forces you to build the right habits from the start rather than falling back to familiar but inefficient patterns. 
 
+:::tip[Trick]
+
+Instead of holding down `jk` to move vertically line by line, you can move a lot faster by prefixing with a number followed by `jk` e.g. `10j` to move `10` lines at a time vertically!
+
+:::
+
 ## Expanded movement
 
-One of the first things to make moving around much more efficient rather than holding down the `hjkl` keys is word and line movement. Move forward and back through words with `w` and `b` respectively. Move to end of word with `e`. Move to start and end of file with `0` and `$` respectively. Move to the top and bottom of the file with `gg` and `G` respectively, and to a specific line number with `457G`. Press `^` to move to first non-blank character of a line if you are positioned at the beginning of an indented line.
+One of the first things to make moving around much more efficient rather than holding down the `hjkl` keys is word and line movement. Move forward and back through words with `w` and `b` respectively. Move to next end of word or previous end of word with `e` and `ge` respectively. Move to start and end of file with `0` and `$` respectively. Move to the top and bottom of the file with `gg` and `G` respectively, and to a specific line number with `457G`. For a rough position in the file you can also use percentage `50%` to go halfway. Press `^` to move to first non-blank character of a line if you are positioned at the beginning of an indented line.
 
 Prefix with a number to repeat that movement action N times, so `10w` will move 10 words down. Typing `2$` will move to the end of line of the second line. The point of using these numbers is not only to enable precision but also to accelerate movement speed around the file.
+
+<GreenHighlight> Another really important movement command is the find command </GreenHighlight> with `f` key. This allows you to search forward in line for a single character, <GreenHighlight>allowing for fast horizontal cursor movement!</GreenHighlight> For instance, with `fx` you jump forward in line to the next `x` character. Combining number with operator and motion, you get `3fl` for the end of the 3rd instance of `l` in the line. The capitalized `F` is used for finding in the reverse direction.
+
+A close variant to `f` that you should know about is `t` which like `f` jumps to the next occurrence of the character on the right, but instead of positioning the cursor directly onto the character, it positions right before. `T` jumps to the character on the left, and positions the cursor after the character. A good way to remember is that `t` stands for till before and `T` till after.
+
+A keystroke that is super useful when paired with character search commands `t` and `f` is the semicolon `;` and comma `,`. The semicolon or comma just repeats the previous search command you gave in forward or reverse direction respectively. So if you do `fx`, then `;` afterwards will jump to the next `x`. Pressing `,` jumps to the previous `x`.
+
+:::tip[Trick]
+
+Advanced motions in vim begins with first understanding the fundamentals of using `w`, `f`, `t`, `;`, `,` to improve navigation speed horizontally, which is usually the biggest bottleneck!
+
+:::
 
 ## Inserts
 
@@ -50,9 +68,15 @@ When you delete with `dd`, the deleted text isn't just removed - it's automatica
 
 You can also combine yanking with number prefixes for efficiency: `3yy` yanks 3 lines starting from the current line, `5yw` yanks 5 words forward.
 
+## Dot command
+
+The `.` command is powerful in vim because it simply repeats the last change command (all change commands except `u`, redo and `:` commands). For example, if you want to change a word to `joe` multiple times, you can do `cwjoe<Esc>` then `.` as many times as you want.
+
 ## Search
 
 Search is a functionality to get acquainted with early on because it will make life much easier navigating a larger document. Simply search by typing `/pattern` in Normal mode, where `pattern` is the word that you are looking for. By default this will match any and all occurrences of the word pattern even if it is embedded within a larger word. This might be a headache say if you are looking for the word `rad` but then it highlights all the instances of `brad`, `trad` in traditional, `rad` in radical. To avoid this issue, use `\<` and `\>` for matching the start and end, so `/\<pattern\>`. Once you hit enter, you can toggle through next and previous search results with `n` and `N` respectively.
+
+To match beginning and end of line, use `^` and `$` in the pattern respectively, e.g. `/^the` for only matching the word `the` at the very beginning. Use `.` to match any character in the pattern like regex, so `/t.e` matches `the` as well as `toe`.
 
 ## Undo
 
@@ -61,3 +85,35 @@ Undo an action with `u` key. Undo an entire line to its original state with `U`.
 ## Change Operations
 
 A useful keystroke to simply replace the word under the cursor is `cw` or `ce` to change until end of word. The key `c` is the <BlueHighlight>change operator</BlueHighlight>, which will delete everything you motion it to change and then place you into insert mode. It will be useful to do `c [number] motion` e.g. `c5$`. You can also replace character at cursor position with `r` followed by the character you want to replace it with. For replacing larger chunks of text, use `R` to enter <BlueHighlight>Replace</BlueHighlight> mode. 
+
+Other useful change commands include `cc` that changes the entire line but leaves an indent. Since these commands are used often, they have shortcuts: `d$` to `D`, `c$` to `C` and `cc` to `S`.
+
+## Substitute
+
+To change every occurrence of `word1` to `word2` in a line, run `:s/word1/word2/g`.To change every occurrence of `word1` to `word2` in the entire file, use `:%s/word1/word2/g`. To do this, but allow it prompt whether to substitute or not for every occurrence, have a `c` at the end so `:%s/word1/word2/gc`.
+
+:::tip[Trick]
+
+You can also limit substitutions to lines selected in Visual mode.
+
+:::
+
+## Split window
+
+You can also view two parts of the same file by using `:split` for horizontal, and `:vsplit` for vertical, and jump between them using `Ctrl+w+[arrow]`. Close the window with `:close` or close all except the one with `:only`. Quit all windows with `:qall` or `:wqall`.
+
+## Core Concepts: Registers and Buffers
+
+Understanding <BlueHighlight>registers</BlueHighlight> and <BlueHighlight>buffers</BlueHighlight> is essential for effective Neovim usage:
+
+**<BlueHighlight>Registers</BlueHighlight>** are temporary storage locations for text that you copy, cut, or delete. When you yank (`y`) or delete (`d`) text, it goes into a register. You can then paste it elsewhere using `p`. Vim has multiple registers (named with letters, numbers, and symbols) so you can store multiple pieces of text simultaneously.
+
+**<BlueHighlight>Buffers</BlueHighlight>** are in-memory representations of files you're editing. When you open a file in Neovim, it loads the file's contents into a buffer. You can have multiple buffers open at once, each containing a different file. Buffers are what you actually edit - changes are made to the buffer until you save (`:w`) to write back to the file.
+
+:::note[Detail]
+The key difference is purpose: registers store copied/cut text snippets for pasting, while buffers hold entire file contents for editing. They work together but serve completely different functions in your editing workflow.
+:::
+
+## Toggling Case
+
+Use `~` to toggle the case of a cursor character or selection. Use `gU` for uppercasing, `gu` for lowercasing.
