@@ -1,0 +1,523 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+import Quiz from '@site/src/components/Quiz';
+
+# Overview
+
+<BlueHighlight>Git</BlueHighlight> is the essential version control system that tracks changes in your code and enables collaboration with other developers. <BlueHighlight>GitHub</BlueHighlight> is simply a service built around Git that hosts your code and helps you share your Git-managed repositories.
+
+:::info[Key Idea]
+We could do without GitHub, but we cannot do without Git - that's the tool you should know how to use.
+:::
+
+## How I Started Learning Git
+
+Git can feel intimidating at first - all the commands seem strange and obscure. The difference between Git and GitHub is often confusing. But with practice and the right understanding of core concepts, Git becomes an incredibly powerful tool for managing code changes and collaborating with others.
+
+:::tip[Trick]
+The best way to learn Git is through hands-on practice. Start with the basic commands and gradually work your way up to more advanced features like rebasing and interactive staging.
+:::
+
+## Basic Git Workflow
+
+The fundamental Git workflow involves four main commands:
+
+### Getting Started
+
+**Clone an existing repository:**
+```shell
+git clone https://github.com/davdma/davdma.github.io.git
+```
+
+**Or start a new repository:**
+```shell
+git init
+```
+
+### Core Workflow
+
+1. **Check file status:**
+   ```shell
+   git status
+   ```
+
+2. **Stage changes:**
+   ```shell
+   git add file.py
+   ```
+
+3. **Commit changes:**
+   ```shell
+   git commit -m "my first commit"
+   ```
+
+4. **Push to remote:**
+   ```shell
+   git push
+   ```
+
+5. **Pull changes:**
+   ```shell
+   git pull
+   ```
+
+:::note[Detail]
+You can add a remote repository later using `git remote add <name> <url>` if you started with `git init`.
+:::
+
+## Concepts
+
+### File States
+Files are either <BlueHighlight>tracked</BlueHighlight> or <BlueHighlight>untracked</BlueHighlight>. Tracked means Git knows about the file and can recover it. Untracked files are everything else in the directory.
+
+### Git's Three Areas
+
+:::info[Key Idea]
+The mental model: `working tree → index → git history`
+:::
+
+- **<BlueHighlight>Working Directory (Working Tree)</BlueHighlight>**: The directory on your file system where project files live
+- **<BlueHighlight>Staging Area (Index)</BlueHighlight>**: Temporary area where you prepare changes for the next commit
+- **<BlueHighlight>Git History</BlueHighlight>**: The permanent record of commits
+
+<details>
+<summary>Understanding the flow between areas</summary>
+
+- `git add` moves changes from working tree → index
+- `git commit` moves changes from index → git history
+- The index allows you to selectively stage changes without committing everything at once
+
+</details>
+
+### Remotes
+<BlueHighlight>Remotes</BlueHighlight> are versions of your repository hosted online (like on GitHub). They enable collaboration by providing a central location where team members can share code changes.
+
+```shell
+# View remotes
+git remote -v
+
+# Add a remote
+git remote add <name> <url>
+
+# Push to specific remote
+git push <remote> <branch>
+```
+
+## Working with Remotes
+
+### Remote Refs and Tracking Branches
+
+When working with remote repositories, Git maintains several types of references:
+
+:::info[Key Idea]  
+Think of <BlueHighlight>remote refs</BlueHighlight> as Git's way of keeping track of what the remote repository looked like the last time you communicated with it.
+:::
+
+**<BlueHighlight>Remote tracking branches</BlueHighlight>** are local references to the state of remote branches. They follow the naming pattern `<remote>/<branch>` (e.g., `origin/main`, `origin/feature-branch`). These refs are automatically updated when you fetch from the remote and represent Git's local cache of the remote repository state.
+
+```shell
+# View all remote tracking branches
+git branch -r
+
+# View both local and remote branches
+git branch -a
+
+# See detailed tracking information
+git branch -vv
+
+# See what remote refs exist
+git ls-remote origin
+```
+
+**<BlueHighlight>Upstream tracking</BlueHighlight>** creates a connection between your local branch and a remote branch. When you push a local branch to remote for the first time, you set up this tracking relationship:
+
+```shell
+# Push and set upstream tracking in one command
+git push -u origin feature-branch
+
+# Equivalent to:
+git push origin feature-branch
+git branch --set-upstream-to=origin/feature-branch
+```
+
+<details>
+<summary>Understanding what upstream tracking enables</summary>
+
+Once upstream tracking is established:
+- `git status` shows how many commits you're ahead/behind the remote
+- `git pull` knows which remote branch to merge from  
+- `git push` knows where to push without specifying remote/branch
+- Git can warn you if your local branch has diverged from remote
+
+</details>
+
+:::note[Detail]
+Remote refs are stored in `.git/refs/remotes/` and are read-only from your perspective. You cannot directly commit to `origin/main` - you commit to your local `main` branch, then push to update the remote.
+:::
+
+### Working with Multiple Remotes
+
+You can have multiple remotes (e.g., `origin`, `upstream`, `fork`) each with their own set of remote refs:
+
+```shell
+# Add additional remotes
+git remote add upstream https://github.com/original/repo.git
+
+# Fetch from all remotes
+git fetch --all
+```
+
+Each remote maintains its own namespace of tracking branches:
+- `origin/main` - main branch from origin remote
+- `upstream/main` - main branch from upstream remote  
+- `fork/experimental` - experimental branch from fork remote
+
+### Fetching vs Pulling
+
+<BlueHighlight>Fetching</BlueHighlight> downloads the latest changes from remote repositories and updates your remote tracking refs (like `origin/main`) without affecting your local branches.
+
+```shell
+# Fetch updates from all remotes
+git fetch
+
+# Fetch from specific remote
+git fetch origin
+
+# View what was fetched
+git log HEAD..origin/main
+```
+
+<BlueHighlight>Pulling</BlueHighlight> combines fetch and merge in one command:
+
+```shell
+# git pull = git fetch + git merge
+git pull
+
+# Equivalent to:
+git fetch
+git merge origin/main
+```
+
+:::note[Detail]
+Because `git pull` runs `git fetch` + `git merge`, pulling can sometimes create merge commits.
+:::
+
+:::tip[Trick]
+Use `git pull --rebase` to avoid merge commits and keep a linear history when pulling updates.
+:::
+
+## Undoing Changes
+
+Often times you'll find yourself in the situation of having run a git command you didn't want to actually run, and you want to go back. This can be tricky if you do not know the appropriate undo commands (some might unknowingly run a dangerous operation like `git clean` and lose precious work, which I've seen happen!).
+
+### Unstaging Files
+<GreenHighlight>Modern way (preferred):</GreenHighlight>
+```shell
+git restore --staged <file>
+```
+
+<GreenHighlight>Legacy way:</GreenHighlight>
+```shell
+git reset HEAD <file>
+```
+
+### Discarding File Changes
+<GreenHighlight>Modern way (preferred):</GreenHighlight>
+```shell
+git restore <file>
+```
+
+<GreenHighlight>Legacy way:</GreenHighlight>
+```shell
+git checkout -- <file>
+```
+
+:::note[Detail]
+HEAD is not moved when you revert a single file.
+:::
+
+### Reset Modes
+
+:::warning[Pitfall]
+Be careful with reset commands - they can permanently discard changes!
+:::
+
+```shell
+git reset <mode> <commit>
+```
+
+<details>
+<summary>Understanding reset modes</summary>
+
+- **`--soft`**: Moves HEAD only, keeps index and working tree unchanged
+- **`--mixed`** (default): Resets index, keeps working tree unchanged  
+- **`--hard`**: Resets both index and working tree - **DANGEROUS!**
+
+</details>
+
+### Git Reset vs Git Restore
+
+:::info[Key Idea]
+`git reset` moves the HEAD, while `git restore` only modifies your working directory. This makes `git restore` safer.
+:::
+
+## Viewing Differences
+
+A very useful command is `git diff` to look at what changes you have compared to a saved reference point. You have options between looking at changes between your working directory and index, index and commit (by default HEAD), or working directory and commit.
+
+```shell
+# Working tree vs index
+git diff
+
+# Index vs commit
+git diff --staged <commit>
+
+# Working tree vs commit  
+git diff --merge-base <commit>
+
+# Show specific commit changes
+git show <commit-sha>
+```
+
+## Branching
+
+:::info[Key Idea]
+Branching is Git's most powerful feature. It allows you to work on code separately without affecting the main codebase.
+:::
+
+<BlueHighlight>Branching</BlueHighlight> enables multiple developers to work on different features simultaneously. The typical workflow protects the <BlueHighlight>main</BlueHighlight> branch, requiring developers to:
+
+1. Branch off of `main`
+2. Work on the feature branch
+3. Submit a <BlueHighlight>pull request (PR)</BlueHighlight>
+4. Get code reviewed
+5. Merge into `main`
+
+:::note[Detail]
+This process is essential for **Continuous Integration (CI)**, preventing integration conflicts by frequently merging work.
+:::
+
+### Branch Commands
+
+```shell
+# Create new branch
+git branch <name>
+# OR create and switch in one command
+git checkout -b <name>
+
+# Switch branches
+git checkout <name>
+
+# Set upstream for first push
+git push -u <remote> <branch>
+
+# Delete local branch
+git branch -d <branch>
+
+# Delete remote branch
+git push origin --delete <branch>
+```
+
+### Moving Around
+
+<BlueHighlight>Git checkout</BlueHighlight> allows you to move around your project's history, examining different commits and branches.
+
+```shell
+# Jump to a specific commit
+git checkout <commit-hash>
+
+# Go back 3 commits from current HEAD
+git checkout HEAD~3
+
+# Return to latest commit on current branch
+git checkout <branch-name>
+```
+
+:::note[Detail]
+When you checkout a specific commit (not a branch), you enter a "detached HEAD" state where HEAD points directly to a commit rather than a branch.
+:::
+
+### Detached HEAD State
+
+When you checkout a specific commit instead of a branch, Git enters <BlueHighlight>detached HEAD state</BlueHighlight>. This happens because HEAD points directly to a commit rather than to a branch reference.
+
+<details>
+<summary>Understanding detached HEAD</summary>
+
+**Normal state**: `HEAD → main → commit ABC123`
+**Detached state**: `HEAD → commit ABC123` (no branch involved)
+
+This is useful for:
+- Exploring historical versions of your code
+- Testing how your project behaved at a specific point
+- Investigating when a bug was introduced
+
+</details>
+
+:::danger[Do Not Forget]
+If you make commits from a detached HEAD state, those commits can be lost! Always create a new branch first if you intend to make commits from a specific commit.
+:::
+
+```shell
+# Safe way to work from a specific commit
+git checkout <commit-hash>
+git checkout -b new-feature-branch  # Create branch from this point
+# Now you can safely make commits
+```
+
+### Merging
+
+<BlueHighlight>Merge commits</BlueHighlight> combine changes from two branches using a three-way merge (common ancestor + both branch tips). The primary purpose of merging is to <GreenHighlight>integrate your feature branch back into the main branch</GreenHighlight> once your work is complete and reviewed.
+
+:::info[Key Idea]
+Merging preserves the complete history of both branches, showing exactly when and how features were developed in parallel.
+:::
+
+When you're ready to combine your feature work back into `main`, you typically:
+1. Ensure your feature branch is up-to-date with `main`
+2. Create a pull request for code review
+3. Merge the feature branch into `main` (often done through GitHub/GitLab UI)
+
+<details>
+<summary>Why merge conflicts happen</summary>
+
+Merge conflicts occur when Git can't automatically combine changes because:
+- **Same lines modified**: Both branches changed the same lines of code differently
+- **File moved/deleted**: One branch modified a file while another deleted or moved it
+- **Structural conflicts**: Changes that affect the same logical code structure
+
+These conflicts are normal in collaborative development - they're Git's way of asking you to manually decide how to combine conflicting changes.
+
+</details>
+
+:::tip[Trick]
+To merge latest `main` changes into your feature branch: checkout `main` → `git pull` → checkout feature branch → `git merge main`
+:::
+
+### Handling Merge Conflicts
+
+:::warning[Pitfall]
+You don't have to choose "current" or "incoming" - you can rewrite the conflicted lines however you want!
+:::
+
+<details>
+<summary>Resolving merge conflicts</summary>
+
+1. Look for conflict markers: `<<<<<<<`, `=======`, `>>>>>>>`
+2. Edit the file to resolve conflicts (you can combine, modify, or rewrite)
+3. Remove all conflict markers
+4. Save and stage the file (`git add <file>`)
+5. Continue with `git merge --continue`
+
+</details>
+
+## Flags & Commands
+
+Here are a list of useful commands with flags that makes my life a lot easier:
+
+```shell
+# Clean status output (hide untracked files)
+git status -uno
+
+# Add and commit everything modified
+git commit -a
+
+# Interactive adding for selective commits
+git add -i
+git add --patch  # For partial file changes
+
+# Rebase instead of merge on pull
+git pull --rebase
+
+# Enhanced log viewing
+git log -p          # Show diffs
+git log --stat      # Show stats
+git log --graph     # ASCII graph
+git log -- <file>   # Limit to file
+git log -S <string> # Search for string changes
+
+# More diff context
+git diff -U8        # 8 lines context instead of 3
+
+# List tracked files
+git ls-files .
+
+# Column branch output
+git branch --column
+
+# Branch status vs remote
+git branch -vv
+```
+
+<details>
+<summary>Advanced commands</summary>
+
+```shell
+# File authorship
+git blame -w -C -C -C <file>
+git blame -L 59,100 <file>     # Specific lines
+git log -L 59,100:<file>       # Line evolution
+
+# Safe force push
+git push --force-with-lease
+
+# Performance optimization
+git maintenance start
+```
+
+</details>
+
+
+## Test Your Knowledge
+
+<Quiz
+  questions={[
+    {
+      question: "What are Git's three main areas for tracking changes?",
+      options: [
+        "Working tree, staging area, remote repository",
+        "Working directory, index, git history", 
+        "Local branch, remote branch, HEAD",
+        "Tracked files, untracked files, ignored files"
+      ],
+      answer: 1
+    },
+    {
+      question: "What's the key difference between git reset and git restore?",
+      options: [
+        "git reset is newer and safer",
+        "git restore moves HEAD, git reset doesn't",
+        "git reset moves HEAD, git restore only modifies working directory",
+        "They do exactly the same thing"
+      ],
+      answer: 2
+    },
+    {
+      question: "What does 'git pull' actually do?",
+      options: [
+        "Only downloads changes from remote",
+        "Only merges remote changes into local branch",
+        "Runs git fetch followed by git merge",
+        "Creates a new branch with remote changes"
+      ],
+      answer: 2
+    },
+    {
+      question: "When are you in detached HEAD state?",
+      options: [
+        "When you checkout a branch name",
+        "When you checkout a specific commit hash",
+        "When you create a new branch",
+        "When you merge branches"
+      ],
+      answer: 1
+    }
+  ]}
+/>
+
+## Resources
+
+- [Interactive Git Tutorial](https://learngitbranching.js.org/) - Visual, hands-on learning
+- [Pro Git book](https://git-scm.com/book/en/v2) - Comprehensive reference
+- [UChicago Student Resource Guide](https://uchicago-cs.github.io/student-resource-guide/tutorials/git-local.html)
+- [Learn Git Rebase](https://www.youtube.com/watch?v=f1wnYdLEpgI&ab_channel=TheModernCoder)
+- [Scott Chacon at FOSDEM](https://www.youtube.com/watch?v=aolI_Rz0ZqY&ab_channel=GitButler)

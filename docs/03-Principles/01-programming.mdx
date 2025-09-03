@@ -1,0 +1,9 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Programming
+
+An interesting topic of discussion I came across online is whether the principles outlined in Uncle Bob's `Clean Code` book may have perversed the concept of good coding practice. One of Uncle Bob's rules that drew a lot of criticism is his strong emphasis on single responsibility (SRP), even going to lengths of suggesting all functions should be 4-6 lines long. Engineers and professors have rightfully pointed out this absurd emphasis on short isolated functions actually impedes maintainable code, because it is more difficult to keep say 40 functions in your head than a few very long functions.
+
+Ultimately, a good principle to follow is instead the <BlueHighlight> Locality of Behavior </BlueHighlight> principle, which states that <GreenHighlight>the behavior of a unit of code should be as obvious as possible to the programmer looking only at that unit of code</GreenHighlight>.
+
+> "The primary feature for easy maintenance is locality: locality is that characteristic of source code that enables a programmer to understand that source by looking at only a small portion of it." - Richard Gabriel

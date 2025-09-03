@@ -1,0 +1,273 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+import Quiz from '@site/src/components/Quiz';
+
+# Advanced Topics
+
+## Git Rebase - The Superpower
+
+There is a popular debate by developers over which is better: `git merge` or `git rebase`. Personally, I think rebase can be a superpower!
+
+:::info[Key Idea]
+Rebase creates a linearized commit history, making it much cleaner than merge commits with multiple parents.
+:::
+
+<BlueHighlight>Rebase</BlueHighlight> takes commits from one branch and copies them on top of another branch, creating a linear history instead of the "entangled" history that merges create.
+
+### Basic Rebase
+
+```shell
+# Rebase current branch onto main
+git rebase main
+
+# Rebase specific branch onto upstream
+git rebase <upstream> <branch>
+```
+
+### Cherry-pick vs Interactive Rebase
+
+**Cherry-pick** when you know exact commits:
+```shell
+git cherry-pick <commit1> <commit2> <commit3>
+```
+
+**Interactive rebase** for more control:
+```shell
+git rebase -i
+```
+
+<details>
+<summary>Interactive rebase options</summary>
+
+When you run `git rebase -i`, you'll see:
+```
+pick 1a2b3c Commit message A
+pick 4d5e6f Commit message B  
+pick 7g8h9i Commit message C
+```
+
+Available actions:
+- `pick`: Keep the commit
+- `drop`: Remove the commit
+- `edit`: Pause to make changes
+- `reword`: Change commit message
+- `squash`: Combine with previous commit
+
+If conflicts occur:
+1. Resolve conflicts manually
+2. `git add` resolved files
+3. `git rebase --continue`
+4. Or `git rebase --abort` to cancel
+
+</details>
+
+:::danger[Do Not Forget]
+**Never rebase commits that have been pushed and others are working from!** Only rebase local changes before pushing.
+
+When you rebase pushed commits that others have built upon, you create a nightmare scenario:
+1. Your rebase changes commit SHAs, making the "same" commits appear as different commits
+2. Collaborators who built on your original commits now have orphaned work
+3. When they try to merge/push, Git sees duplicate commits with different SHAs
+4. This creates merge conflicts, duplicate commits, and a tangled history that's nearly impossible to untangle
+5. The team ends up with a "commit soup" where the same changes exist multiple times with different hashes
+
+The golden rule: **rebase only unpushed commits**.
+:::
+
+:::tip[Trick]
+Use `git reflog` and `git reset` to undo a rebase if needed.
+:::
+
+### RERERE (REuse REcorded REsolutions)
+
+Often times people dislike `git rebase` because they find themselves constantly having to resolve the same conflicts over and over. This can happen if you have rebased a branch `A->B->C` onto `D` of main but then later rebase it onto a later commit `E` of main instead. The same conflicts you resolved the first rebase will happen again as your branch commits gets replayed through `D`! But one of the neat lesser known features that make this go away (and makes rebase great again) is RERERE.
+
+RERERE when enabled saves how you resolved a previous confict in memory, so that if you're rebasing and hitting the same merge conflicts, Git will automatically fix that for you. Just run:
+
+```shell
+git config --global rerere.enabled true
+```
+
+## Squashing
+
+<BlueHighlight>Squashing</BlueHighlight> combines multiple commits into one, creating cleaner history.
+
+### Methods
+
+**1. Interactive Rebase:**
+Use `squash` action in `git rebase -i`
+
+**2. Squash Merge (Recommended):**
+```shell
+git merge --squash feature
+```
+
+:::info[Key Idea]
+Squash merge stages all feature branch changes as one change set **without creating a merge commit**.
+:::
+
+<details>
+<summary>Squash merge example</summary>
+
+Before: `A (main) → B → C (feature)`
+After squash merge: `A → D (main)` where D combines B + C
+
+</details>
+
+## Useful Commands
+### Stash
+
+<BlueHighlight>Stashing</BlueHighlight> temporarily saves uncommitted changes so you can switch contexts.
+
+```shell
+# Stash changes
+git stash
+
+# Do other work (checkout commits, switch branches)
+git checkout HEAD~3
+git checkout feature
+
+# Restore stashed changes
+git stash pop
+```
+
+### Revert
+
+<BlueHighlight>Revert</BlueHighlight> creates a new commit that undoes the changes from a previous commit, preserving history.
+
+```shell
+# Revert the last commit
+git revert HEAD
+
+# Revert a specific commit
+git revert <commit-hash>
+
+# Revert multiple commits (creates separate revert commits)
+git revert <commit1> <commit2> <commit3>
+
+# Revert a merge commit (specify parent with -m)
+git revert -m 1 <merge-commit>
+```
+
+:::info[Key Idea]
+Revert is the "safe" way to undo commits because it preserves history. Unlike `git reset`, which rewrites history, revert creates new commits that document the undoing.
+:::
+
+**Why revert > reset for shared commits:**
+- **Revert**: Safe for pushed commits - creates new "opposite" commit
+- **Reset**: Dangerous for pushed commits - rewrites history and can break others' work
+
+:::note[Detail]
+For merge commits, use `-m 1` to revert to the first parent (usually main branch) or `-m 2` for the second parent (feature branch).
+:::
+
+### Reflog
+
+<BlueHighlight>Reflog</BlueHighlight> records where HEAD was and recent actions - useful for recovery.
+
+```shell
+# View reflog
+git reflog
+
+# Move to previous HEAD position
+git reset --soft "HEAD@{2}"
+```
+
+:::note[Detail]
+`HEAD@{n}` refers to HEAD's position `n` moves ago in the reflog.
+:::
+
+### Aliases
+
+Create shortcuts for commonly used commands:
+
+```shell
+# Simple alias
+git config --global alias.co checkout
+
+# Custom command combinations
+git config --global alias.last 'log -1 HEAD'
+```
+
+:::tip[Trick]
+Aliases save time on frequently used command combinations. Consider creating aliases for your most common workflows.
+:::
+
+## Range Notation
+
+<BlueHighlight>Range notation</BlueHighlight> is a powerful way to specify commit ranges in Git commands.
+
+### Double Dot (A..B)
+**Commits reachable from B but not A**
+
+```shell
+# See commits in feature not in main
+git log main..feature
+
+# Preview what you'll push
+git log origin/main..HEAD
+
+# See newly fetched changes
+git log feature..origin/feature
+
+# Diff between branches
+git diff main..feature
+```
+
+### Triple Dot (A...B) 
+**Commits reachable from A or B but not both**
+
+```shell
+# See all commits since divergence
+git log main...feature
+```
+
+:::info[Key Idea]
+Range notation works with most Git commands - `log`, `diff`, `cherry-pick`, etc.
+:::
+
+## Test Your Knowledge
+
+<Quiz
+  questions={[
+    {
+      question: "What does 'git log main..feature' show?",
+      options: [
+        "All commits in main and feature branches",
+        "Commits in main but not in feature",
+        "Commits in feature but not in main",
+        "The merge point between main and feature"
+      ],
+      answer: 2
+    },
+    {
+      question: "When should you avoid rebasing?",
+      options: [
+        "When working on a local branch",
+        "When you want cleaner history",
+        "When commits have been pushed and others are working from them",
+        "When you have merge conflicts"
+      ],
+      answer: 2
+    },
+    {
+      question: "What does squash merge do?",
+      options: [
+        "Creates a merge commit with two parents",
+        "Stages all feature branch changes as one change set without creating a merge commit",
+        "Deletes the feature branch automatically",
+        "Only works with interactive rebase"
+      ],
+      answer: 1
+    },
+    {
+      question: "What does 'HEAD@{2}' refer to in git reflog?",
+      options: [
+        "The second commit in the current branch",
+        "Two commits before the current HEAD",
+        "HEAD's position 2 moves ago in the reflog",
+        "The merge base between two branches"
+      ],
+      answer: 2
+    }
+  ]}
+/>
