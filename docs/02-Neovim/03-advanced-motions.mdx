@@ -1,0 +1,257 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+import Quiz from '@site/src/components/Quiz';
+
+# Advanced Motions
+
+Once the fundamental key bindings are understood, you can start developing fast vim motions. This starts with understanding <BlueHighlight>Text Objects</BlueHighlight>.
+
+## Text Objects
+
+With the standard operator-motion the command acts on the specific cursor position. For example, `dw` deletes the word starting from your cursor position, not the entire word your cursor sits on. This means that if you position in the middle of a word and press `dw` you will only delete half of it. Having to position cursors precisely for proper actions puts a bottleneck on movement and operation speed. Text objects broadens the scope from cursor position to the object of interest - instead of `w` you have `aw` for "a word" allowing the command `daw` to delete the word regardless of how the cursor is positioned on it. This is called <BlueHighlight>operator-text object</BlueHighlight>.
+
+To change a whole sentence regardless of cursor position, you use `cis`. The change operator acts on the text object `is` which stands for "inner sentence". This is not be confused with changing the entire line - if you have multiple sentences on one line, it only acts on the sentence you are on. If you have another sentence after the one you delete and you do not want a whitespace there you may consider using `as`. The text object `as` stands for "a sentence" which compared to `is` includes the white space after the sentence.
+
+The key difference between `a` and `i` is more nuanced than just whitespace:
+
+- **`i` (inner)**: The text object itself, excluding delimiters/boundaries
+- **`a` (around/a)**: The text object plus its surrounding delimiters/boundaries
+
+<GreenHighlight>This is fundamentally about delimiters and boundaries, not just whitespace.</GreenHighlight> For example:
+- `i"` = content inside quotes (excluding the quotes)
+- `a"` = content plus the quote marks  
+- `i)` = content inside parentheses
+- `a)` = content plus the parentheses
+
+For words specifically:
+- `iw` = just the word characters
+- `aw` = the word plus trailing whitespace (or leading if no trailing)
+
+:::tip[Trick]
+Remember: **"a"round** includes the boundaries, **"i"nside** excludes them.
+:::
+
+There are a long list of text objects. The ones to get familiar with for now are:
+
+**Words & Sentences:**
+- `w` / `aw` / `iw` - word
+- `W` / `aW` / `iW` - WORD (capital W)
+- `s` / `as` / `is` - sentence
+- `p` / `ap` / `ip` - paragraph
+
+**Quotes & Brackets:**
+- `"` / `a"` / `i"` - double quotes
+- `'` / `a'` / `i'` - single quotes
+- `` ` `` / ``a` `` / ``i` `` - backticks
+- `(` or `)` / `a(` / `i(` - parentheses
+- `[` or `]` / `a[` / `i[` - square brackets
+- `{` or `}` / `a{` / `i{` - curly braces
+- `<` or `>` / `a<` / `i<` - angle brackets
+
+### Word vs WORD (w vs W)
+
+<GreenHighlight>The distinction between lowercase "w" and uppercase "W" is crucial for practical editing.</GreenHighlight>
+
+- **`aw` (a word)**: Selects words defined by `iskeyword` setting - typically letters, digits, and underscores. Stops at punctuation and whitespace.
+- **`aW` (a WORD)**: Selects any sequence of non-whitespace characters separated by whitespace, including punctuation.
+
+**Why capital W is essential:**
+
+```
+filename.txt    config-file.json    user@domain.com    /path/to/file
+```
+
+- `daw` on "filename.txt" only deletes "filename" (stops at the dot)
+- **`daW` on "filename.txt" deletes the entire "filename.txt"** ✨
+
+- `daw` on "config-file.json" only deletes "config" (stops at the hyphen)  
+- **`daW` on "config-file.json" deletes "config-file.json"** ✨
+
+:::tip[Trick]  
+Use **capital W text objects** when working with filenames, URLs, email addresses, or any text containing punctuation that you want to treat as a single unit.
+:::
+
+:::warning[Pitfall]
+Many beginners get frustrated trying to delete filenames or URLs with `daw` - remember to use `daW` for complete non-whitespace sequences!
+:::
+
+## Visual Mode
+
+With text objects, now you can select whole sentences or lines inside parenthesis without needing to do a lot of cursor moving and combos! For example, to select all the arguments in the function parenthesis, just type `vi(`:
+
+```python
+def baz(arg1, arg2, arg3, arg4):
+	pass
+```
+
+Then you can just either delete it with `d` or use `c` change operator to delete it and start modifying in insert mode! If you are not within a parenthesis or bracket, `vi{` or `vi(` will just jump you to the next one in the line, which is actually a neat feature. You can also use `yi{` to yank something inside a bracket, then `vaw` to select a word, and then `p` to paste over that word. As you can see, you can combine text objects with visual mode selection to do a lot of actions.
+
+## Other Motion Patterns
+
+Beyond text objects, there are other powerful motion patterns that complement advanced editing workflows.
+
+### Till and Find Motions
+
+These motions allow you to jump to specific characters on the current line:
+
+**Find motions (f/F):**
+- `f{char}` - jump forward to next occurrence of character (inclusive)
+- `F{char}` - jump backward to previous occurrence of character (inclusive)
+
+**Till motions (t/T):**
+- `t{char}` - jump forward till (before) next occurrence of character
+- `T{char}` - jump backward till (after) previous occurrence of character
+
+<GreenHighlight>The key difference: "f" lands ON the character, "t" lands one position BEFORE it.</GreenHighlight>
+
+**Common patterns:**
+- `dt,` - delete till next comma (useful for function parameters)
+- `ct.` - change till next period (sentence editing)
+- `dF(` - delete back through previous opening parenthesis
+- `df;` - delete through next semicolon (including the semicolon)
+
+**Combining with text objects:**
+```javascript
+function example(arg1, arg2, arg3) {
+    return processData(arg1);
+}
+```
+
+- `F(vi(` - jump to previous `(`, then select inner parentheses content
+- `f"ci"` - jump to next `"`, then change inside quotes
+- `t,caw` - jump till comma, then change a word
+
+:::tip[Trick]
+Use `t` motions when you want to preserve the target character (like commas in parameter lists), and `f` motions when you want to include/delete the character.
+:::
+
+:::note[Detail]
+After using `f`, `F`, `t`, or `T`, you can repeat the motion with `;` (forward) or `,` (backward).
+:::
+
+### Practical Workflow Examples
+
+These patterns become powerful when chained together:
+
+1. **Refactoring function calls:**
+   - `F(ci(` - jump to opening parenthesis, change inside
+   
+2. **Editing lists/arrays:**
+   - `f[vi[` - jump to bracket, select inner content
+   - `t,daw` - jump till comma, delete word (removing parameter)
+
+3. **Text editing:**
+   - `T"vt"` - select from after previous quote till before next quote
+   - `dt:` - delete till colon (useful for key-value editing)
+
+## Resources
+
+For more information on advanced vim motions, I highly recommend consulting videos like [this one](https://www.youtube.com/watch?v=qZO9A5F6BZs&ab_channel=ThePrimeagen), where they walk you through what the advanced vim motions actually look and feel like.
+
+I also found a fun [game](https://vim-adventures.com/) you can play that makes you practice your vim motions, it's cool!
+
+## Test Your Knowledge
+
+<Quiz
+  questions={[
+    {
+      question: "What is the fundamental difference between operator-motion and operator-text object?",
+      options: [
+        "Text objects are only for visual mode, motions are for normal mode",
+        "Text objects act on whole entities regardless of cursor position, motions act from cursor position",
+        "Text objects are faster than motions",
+        "There is no difference, they are the same thing"
+      ],
+      answer: 1
+    },
+    {
+      question: "What does `daw` do?",
+      options: [
+        "Delete from cursor to end of word",
+        "Delete all words in the line",
+        "Delete and append word",
+        "Delete the entire word regardless of cursor position, including trailing whitespace"
+      ],
+      answer: 1
+    },
+    {
+      question: "What is the key difference between `aw` and `iw`?",
+      options: [
+        "`aw` includes trailing whitespace, `iw` only includes word characters",
+        "`iw` is case-sensitive, `aw` is not",
+        "`aw` works with uppercase words, `iw` with lowercase",
+        "`iw` is for insert mode, `aw` is for all modes"
+      ],
+      answer: 0
+    },
+    {
+      question: "Why would you use `daW` instead of `daw` on 'filename.txt'?",
+      options: [
+        "`daW` is faster to type",
+        "`daW` deletes the entire 'filename.txt' while `daw` only deletes 'filename'",
+        "`daW` works in more vim versions",
+        "`daW` preserves the file extension"
+      ],
+      answer: 1
+    },
+    {
+      question: "What does `ci\"` do?",
+      options: [
+        "Copy inside quotes",
+        "Change inside quotes (delete content and enter insert mode)",
+        "Cut inside quotes",
+        "Create inside quotes"
+      ],
+      answer: 1
+    },
+    {
+      question: "What is the difference between `f(` and `t(`?",
+      options: [
+        "`f(` finds parentheses, `t(` finds text",
+        "`f(` jumps forward, `t(` jumps to top",
+        "`f(` lands ON the '(', `t(` lands one position BEFORE the '('",
+        "`f(` is case-sensitive, `t(` is not"
+      ],
+      answer: 2
+    },
+    {
+      question: "What would `dt,` accomplish when editing function parameters?",
+      options: [
+        "Delete all text and commas",
+        "Delete through the comma (including the comma)", 
+        "Delete till the next comma (preserving the comma)",
+        "Delete the current parameter completely"
+      ],
+      answer: 2
+    },
+    {
+      question: "If you want to select content inside parentheses regardless of cursor position, you would use:",
+      options: [
+        "`v(`",
+        "`vi(`",
+        "`va(`",
+        "`v)(`"
+      ],
+      answer: 1
+    },
+    {
+      question: "The main advantage of text objects over precise cursor positioning is:",
+      options: [
+        "Text objects use less memory",
+        "Text objects work on whole entities, eliminating the bottleneck of precise cursor placement",
+        "Text objects are newer vim features",
+        "Text objects work better with plugins"
+      ],
+      answer: 1
+    },
+    {
+      question: "What does the `a` in text objects like `a\"` represent?",
+      options: [
+        "All quotes in the document",
+        "After the quote mark",
+        "Automatic text selection",
+        "Around/a - includes the delimiters/boundaries"
+      ],
+      answer: 3
+    }
+  ]}
+/>
