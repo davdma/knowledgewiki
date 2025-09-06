@@ -87,6 +87,14 @@ RERERE when enabled saves how you resolved a previous confict in memory, so that
 git config --global rerere.enabled true
 ```
 
+### Rebasing Stacked Branches
+
+If you are rebasing stacked branches, the workflow can be quite tedious as it will not automatically update the refs of any other dependent branches. Say you have consecutive branches `A -> B (branch1)-> C (branch2) --> D (branch3)` and you rebase `branch1` onto `dev`. Then the refs for `branch2` and `branch3` downstream will be outdated as they will still be pointing to the commits leading from old commits of `branch1`! You would have to sequentially checkout `branch2` and rebase it onto `branch1` and do the same for `branch3`, or rebase from `branch3` at the very beginning and update `branch1` and `branch2` refs individually to the new commits. It doesn't have to be branches sitting sequentially, just as long as they have dependency on the branch being rebased.
+
+Often times this happens when developers go back to fix a certain commit in a PR, and you have branches downstream of that PR you need to rebase on top of the fixed commit.
+
+**The solution:** to make this workflow a lot more streamline, there is a `git rebase --update-refs` option that will automatically update the refs of any branches pointing to commits that are rebased, so you don't have to do it manually. Also see the `jujutsu` VCS on how this gets abstracted away and makes patching very easy. 
+
 ## Squashing
 
 <BlueHighlight>Squashing</BlueHighlight> combines multiple commits into one, creating cleaner history.

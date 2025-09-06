@@ -46,6 +46,8 @@ Advanced motions in vim begins with first understanding the fundamentals of usin
 
 Keys are also meant for speedy inserts, so you don't have to position the cursor at the correct spot in normal mode before pressing `i` to go into insert mode. For instance, you can jump to insert mode at the end of the line with `A` (think short for append). Jump to insert mode on a new line below the cursor with `o` (newline above with `O`). A good key to also know is to insert after cursor position with `a` as opposed to before cursor position with `i` (so I'll sometimes use `a` over `i` at my cursor position).
 
+There are many other examples of useful compound short cuts like `A = $a`. Another common shortcut is `C = c$` which replaces everything from cursor to end of line and puts you into insert mode. The shortcut `I = ^i` puts you into insert mode at the start of the first non whitespace character.
+
 ## Deletes
 
 For minor character deletes, this is provided with `x`. But the <GreenHighlight>most useful keystroke early on for deleting an entire line</GreenHighlight> is `dd`. You can delete multiple lines with number prefixes like `5dd`.
@@ -54,7 +56,7 @@ For minor character deletes, this is provided with `x`. But the <GreenHighlight>
 
 ## Yanking and Pasting
 
-<BlueHighlight>Yanking</BlueHighlight> is vim's term for copying text, and it works seamlessly with vim's operator-motion paradigm. Use `y` as the yank operator followed by a motion to specify what to copy. For example: `yw` yanks a word, `y$` yanks to the end of line, `yy` (or `Y`) yanks the entire current line.
+<BlueHighlight>Yanking</BlueHighlight> is vim's term for copying text, and it works seamlessly with vim's operator-motion paradigm. Use `y` as the yank operator followed by a motion to specify what to copy. For example: `yw` yanks a word, `Y = y$` yanks to the end of line, `yy` yanks the entire current line.
 
 :::tip[Trick]
 You can use <BlueHighlight>Visual mode</BlueHighlight> to precisely select what you want to yank. Press `v` to enter visual mode, use movement keys to select the desired text, then press `y` to yank the selection. This is especially useful for copying irregular chunks of text that don't align neatly with word or line boundaries.
@@ -70,11 +72,24 @@ You can also combine yanking with number prefixes for efficiency: `3yy` yanks 3 
 
 ## Dot command
 
-The `.` command is powerful in vim because it simply repeats the last change command (all change commands except `u`, redo and `:` commands). For example, if you want to change a word to `joe` multiple times, you can do `cwjoe<Esc>` then `.` as many times as you want.
+The `.` command is powerful in vim because it simply repeats the last change command (all change commands except `u`, redo and `:` commands). For example, if you want to change a word to `joe` multiple times, you can do `cwjoe<Esc>` then `.` as many times as you want. The dot command is also handy as it is much less tedious than counting. For instance, if you wanted to delete some consecutive words in a line you can count them and then do `d7w` but it is much smoother to just do `dw......` and skip the counting.
+
+This is something I underutilize, but it really can reduce the amount of repeated keystrokes in vim. Suppose you want to add a `;` to the end of the next 4 lines in javascript:
+
+```javascript
+var foo = 1
+var bar = 'a'
+var foobar = foo + bar
+var barfoo = bar + foo
+```
+
+Then instead of doing `A;` on the first line, then `j`, then repeat over and over, we can do `A;<Esc>j.j.j.` - and we can keep doing this as long as we want!
 
 ## Search
 
 Search is a functionality to get acquainted with early on because it will make life much easier navigating a larger document. Simply search by typing `/pattern` in Normal mode, where `pattern` is the word that you are looking for. By default this will match any and all occurrences of the word pattern even if it is embedded within a larger word. This might be a headache say if you are looking for the word `rad` but then it highlights all the instances of `brad`, `trad` in traditional, `rad` in radical. To avoid this issue, use `\<` and `\>` for matching the start and end, so `/\<pattern\>`. Once you hit enter, you can toggle through next and previous search results with `n` and `N` respectively.
+
+There is also a faster to search a word if it is already under your cursor. Just use the key `*`. Then automatically it will execute a search with `/\<word\>` and jump you to the next occurrence.
 
 To match beginning and end of line, use `^` and `$` in the pattern respectively, e.g. `/^the` for only matching the word `the` at the very beginning. Use `.` to match any character in the pattern like regex, so `/t.e` matches `the` as well as `toe`.
 
@@ -86,7 +101,7 @@ Undo an action with `u` key. Undo an entire line to its original state with `U`.
 
 A useful keystroke to simply replace the word under the cursor is `cw` or `ce` to change until end of word. The key `c` is the <BlueHighlight>change operator</BlueHighlight>, which will delete everything you motion it to change and then place you into insert mode. It will be useful to do `c [number] motion` e.g. `c5$`. You can also replace character at cursor position with `r` followed by the character you want to replace it with. For replacing larger chunks of text, use `R` to enter <BlueHighlight>Replace</BlueHighlight> mode. 
 
-Other useful change commands include `cc` that changes the entire line but leaves an indent. Since these commands are used often, they have shortcuts: `d$` to `D`, `c$` to `C` and `cc` to `S`.
+Other useful change commands include `cc` that changes the entire line but leaves an indent. Since these commands are used often, they have shortcuts: `D = d$`, `C = c$` and `S = cc` (notice now the pattern between capital shortcuts and the `$` command). 
 
 ## Substitute
 
@@ -101,6 +116,8 @@ You can also limit substitutions to lines selected in Visual mode.
 ## Split window
 
 You can also view two parts of the same file by using `:split` for horizontal, and `:vsplit` for vertical, and jump between them using `Ctrl+w+[arrow]`. Close the window with `:close` or close all except the one with `:only`. Quit all windows with `:qall` or `:wqall`.
+
+You can also open a window on a new file using `:new` and then saving it with filename using `:saveas move.c`.
 
 ## Core Concepts: Registers and Buffers
 
@@ -117,3 +134,9 @@ The key difference is purpose: registers store copied/cut text snippets for past
 ## Toggling Case
 
 Use `~` to toggle the case of a cursor character or selection. Use `gU` for uppercasing, `gu` for lowercasing.
+
+## Resources
+
+Useful guides to consult:
+- Practical Vim by Drew Neil (pdf can be found online)
+- Neovim user manual starting from [page 1](https://neovim.io/doc/user/usr_01.html#usr_01.txt)
