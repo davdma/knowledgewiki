@@ -85,6 +85,8 @@ def baz(arg1, arg2, arg3, arg4):
 
 Then you can just either delete it with `d` or use `c` change operator to delete it and start modifying in insert mode! If you are not within a parenthesis or bracket, `vi{` or `vi(` will just jump you to the next one in the line, which is actually a neat feature. You can also use `yi{` to yank something inside a bracket, then `vaw` to select a word, and then `p` to paste over that word. As you can see, you can combine text objects with visual mode selection to do a lot of actions.
 
+The capital `V` is actually also powerful for dealing with selection linewise as opposed to character-wise with `v`. For instance, if you wanted to select the entire file contents, `ggvG` will only select up to the start of the last line, because it operates by character. The solution is `ggVG` which selects all lines in the file! Or if you want to grab all 4 lines below `V4j` is much better than `v4j$`.
+
 ## Other Motion Patterns
 
 Beyond text objects, there are other powerful motion patterns that complement advanced editing workflows.

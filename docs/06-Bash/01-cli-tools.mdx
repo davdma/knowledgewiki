@@ -1,0 +1,74 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# CLI Tools
+
+## Fuzzy Find Navigation
+
+Navigating the file system in the command line is much faster with fuzzy finder than doing `ls` and `cd` operations. The `fzf` tool on the CLI by itself is really just a <BlueHighlight>unix filter</BlueHighlight> - it reads data from `stdin`, performs a transformation or operation on that data, and writes the result to `stdout`, so that it can be chained with other tools using pipes. To see this, simply run `fzf` and select a file. The outcome is that the selected file's filepath gets printed to `stdout`, it doesn't open the file for you like you would think! It's only useful once you chain its output to another tool.
+
+For example, you can use it with `find` to find a file or directory:
+
+```bash
+# fuzzy search through files in cwd
+find . -type f | fzf
+
+# fuzzy search through folders in cwd
+find . -type d | fzf
+
+# fuzzy search with exact match
+find . -type f | fzf -e
+```
+
+You can select multiple items in the `fzf` UI in multi select mode `-m` with shift + tab key on the file or directory.
+
+To open the fzf selected file for vim, use:
+```bash
+vim `fzf` # open one file selected with fzf
+vim -o `fzf -m` # open a list of files selected with fzf multi select in horizontal split windows
+```
+
+A lot of nice key bindings and features are available with the `fzf` shell integration. A cool feature is the `**` sequence to trigger fuzzy finding:
+```bash
+# opens fuzzy finder to let you find exact file if you do not remember the name!
+vim ~/.dotfiles/** # hit TAB after the ** to enter fuzzy completion
+
+vim ../** # hit TAB after to select files under parent directory
+
+vim ../fzf** # hit TAB after to find files under parent that match `fzf`
+
+cd ~/** # hit TAB after this!
+
+ssh ** # hit TAB shows possible hostnames fuzzy completed
+```
+
+The key bindings provided by the `fzf` shell integration are also very powerful. Instead of using `**` in the bash command to invoke `fzf`, a faster way is to just use `<Ctrl-T>` at the place where you want the file paths to be pasted in, so `cd <Ctrl-T>` which will invoke `fzf`. Once you select the files, they will be pasted into the bash command at the place where you invoked `fzf`. For exclusively jumping directories, you can just use `<Alt-C>` to invoke `fzf` and `cd` directly into the selected directory! The only caveat is that they only start search relative to current working directory, so any directories and files above are not accessible through these shortcuts, you either need to use `../**` or `~/**` or have some other shortcut set up.
+
+:::tip[Trick]
+
+Using the shell integration is so much faster than manually typing in the `fzf` commands. Most of the time, you just want to find a file path and put that somewhere or `cd` into a directory, which is where `<Ctrl-T>` and `<Alt-C>` shines.
+
+:::
+
+## FFmpeg
+
+A really powerful CLI tool available in bash is `ffmpeg` which is extremely versatile and powerful for working with media files. It can record, process, stream, and process audio and video - as a result it is used under the hood by OBS, VLC, Youtube, Zoom, Audacity etc. and is a good tool for scripting.
+
+```bash
+# convert video to mp4
+ffmpeg -i input.mov output.mp4
+
+# extract audio from video
+ffmpeg -i input.mp4 -q:a 0 -map a output.mp3
+
+# resize video
+ffmpeg -i input.mp4 -vf "scale=1280:720" output_720p.mp4
+
+# make a gif from part of a video
+ffmpeg -i input.mp4 -t 5 -ss 00:00:03 -vf "scale=500:-1" output.gif
+```
+
+`ffmpeg` is more like a bare metal video editor and media toolkit accessible directly through CLI.
+
+## Resources
+
+- `fzf` intro video [here](https://www.youtube.com/watch?v=qgG5Jhi_Els&ab_channel=AlexeySamoshkin)

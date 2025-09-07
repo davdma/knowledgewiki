@@ -202,7 +202,7 @@ Because `git pull` runs `git fetch` + `git merge`, pulling can sometimes create 
 :::
 
 :::tip[Trick]
-Use `git pull --rebase` to avoid merge commits and keep a linear history when pulling updates.
+Use `git pull --rebase` to avoid merge commits and keep a linear history when pulling updates. Note that this will rebase your local branch **ONTO** the remote branch it is tracking, so downstream branches may be orphaned if you are not careful (see `--update-refs` in [rebasing notes](./02-Advanced.mdx#rebasing-stacked-branches)).
 :::
 
 ## Undoing Changes

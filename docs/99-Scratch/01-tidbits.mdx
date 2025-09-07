@@ -1,0 +1,61 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Tidbits
+
+Here I keep notes of small things I learned that do not fit into a larger overarching topic. Any time I learn something interesting that I want to remember, I put that here.
+
+## F1 Score
+
+One thing I recently looked deeper into (as part of my flood mapping project) was the math behind the F1 score. I have always known that it was the "harmonic" mean of precision ($\frac{TP}{TP + FP}$) and recall ($\frac{TP}{TP + FN}$), but did not know anything really beyond that.
+
+First, let's define the "harmonic" mean mathematically. One thing to remember is that it is normally used for positive values, typically ratios and rates. For positive reals $x_1, x_2, \ldots, x_n$, it is defined as
+
+$$
+H = \frac{n}{\frac{1}{x_1} + \frac{1}{x_2} + \ldots + \frac{1}{x_n}}
+$$
+
+It is also the reciprocal of the arithmetic mean of the reciprocals:
+
+$$
+H = \frac{1}{\frac{1}{n}(\frac{1}{x_1} + \frac{1}{x_2} + \ldots + \frac{1}{x_n})}
+$$
+
+In the context of F1 as a value of precision and recall, we have that:
+
+$$
+F1 = \frac{2}{\frac{1}{precision} + \frac{1}{recall}} = \frac{2TP}{2TP + FN + FP}
+$$
+
+The harmonic mean has the property that it is always greater than or equal to the minimum of its values $x_1, x_2, \ldots, x_n$. The harmonic mean of a list of values however, tends to its least value as opposed to the arithmetic mean, and therefore is less susceptible to the impact of outliers. A good way of thinking about this is that <GreenHighlight>we use arithmetic mean of the reciprocals to bias the small values in the same way, and we convert that effect back into our original unit by taking a reciprocal again</GreenHighlight>. The reason why it is used over the arithmetic mean in the context of balancing recall and precision, is that it punishes imbalance more strongly. If you have high precision but low recall because you are too picky, F1 will be low. If you have high recall but low precision because you are overly sensitive, then F1 will also be low. F1 will only be high when both are high and in agreement.
+
+The only drawback is that F1 treats recall and precision as equally important. In cases where recall is more important than precision or precision more than recall you want to use the F-beta score which is a generalization of F1 with weighted harmonic mean. Given $\beta > 0$,
+
+$$
+F_{\beta} = \frac{(1+\beta^2) * precision * recall}{(\beta^2) * precision + recall} = \frac{(1+\beta^2)TP}{(1+\beta^2)TP + FP + \beta^2FN}
+$$
+
+Observe that at $\beta = 1$ the weighting is equal and it defaults to the normal F1. But if $\beta = 2$ then recall is weighted twice as important and $\beta = 0.5$ precision is weighted twice as important.
+
+Harmonic means shows up in rates and ratios. Why? Suppose you drive a car 60mph for $d$ miles, and then return at 30mph for $d$ miles. What is the average speed? The average speed is NOT the arithmetic mean $\frac{60+30}{2} = 45$, because it assumes the same time elapsed between the two.
+
+## Python as an Interpreter
+
+I've found an urge to branch out of Python because while it is quite a useful and simplistic programming language for machine learning tasks, it is not as useful for building fast applications. I've encountered many difficulties with bottlenecks with Python scripts.
+
+## Codecs
+
+When talking about `ffmpeg` a term that comes up a lot is <BlueHighlight>codecs</BlueHighlight>. A codec is a **software or algorithm that encodes raw audio/video into a compressed format for storage or transmission and decodes the compressed format back into the original form. In `ffmpeg` codecs are implemented as modules that handle these encoding and decoding operations. An example of a codec supported by `ffmpeg` is mp3! In the API codecs are abstracted as `AVCodec` (Audio Video Codec). Choosing the type of codec determines the compression efficiency, quality and encoding/decoding speed.
+
+Here is a slice of the large list of available codecs you get by running `ffmpeg --codecs`:
+
+```bash
+ DEAIL. mp3                  MP3 (MPEG audio layer 3) (decoders: mp3float mp3 ) (encoders: libmp3lame libshine )
+ D.AIL. mp3adu               ADU (Application Data Unit) MP3 (MPEG audio layer 3) (decoders: mp3adufloat mp3adu )
+ D.AIL. mp3on4               MP3onMP4 (decoders: mp3on4float mp3on4 )
+ D.AI.S mp4als               MPEG-4 Audio Lossless Coding (ALS) (decoders: als )
+ ..A.L. mpegh_3d_audio       MPEG-H 3D Audio
+ D.AIL. musepack7            Musepack SV7 (decoders: mpc7 )
+ D.AIL. musepack8            Musepack SV8 (decoders: mpc8 )
+ DEAIL. nellymoser           Nellymoser Asao
+ DEAIL. opus                 Opus (Opus Interactive Audio Codec) (decoders: opus libopus ) (encoders: opus libopus )
+```

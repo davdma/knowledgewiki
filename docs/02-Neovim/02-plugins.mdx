@@ -6,11 +6,36 @@ With `kickstart.nvim` plugins, there will be access to useful commands starting 
 
 ## Browsing the Filesystem
 
+Opening files can be an inefficient process if sticking to basic vim functions. For example, I always used to type in the shell `nvim long-file-name.txt` to open a file of interest, until I realized you could just do `nvim .` and navigate!
+
+:::tip[Trick]
+You can open neovim with `nvim .` or `vim .` to start with a directory view showing all files in the current directory. This lets you navigate and select files to open without needing to type the full filename.
+:::
+
 Often times in my workflow I find myself in need of opening another file while editing the current one. Instead of `:wq` to exit out of the current file, `cd`-ing to the right directory and then opening the target file in neovim, I found it was much easier to have split screens so you can keep the original file open while navigating to the target file in another window.
 
 If the file is on the same directory level as the current file, default vim has `:edit file.txt` command for switching over. However, if the file requires further navigation, this won't be as useful. The most convenient way if you have recently opened the file you want to navigate to is to use `<leader>s.` - this will open up a list of your recent files, and pressing `Enter` will switch to that file. However, if you have not opened the file before, you will need to use a different plugin.
 
 My neovim setup comes installed with `neo-tree` which is a plugin to browse the file system while in neovim. This can be done by typing `:Neotree`. This by default opens a file system window on the left that displays your files <GreenHighlight>starting from the current working directory</GreenHighlight>. To open the bar while keeping focus on your current window use `:Neotree show`. If you want to navigate up a directory, you will have to provide a `dir` argument to neo-tree by simply passing in a directory path, so `:Neotree ../` will start a directory up from the current file. You can always change the cwd of the neotree window later by typing in `:Neotree somedir/` (note that relative filepaths will use your current cwd). If you want to look at your open buffers, you can also do `:Neotree buffers`. To close the neotree window, type `:Neotree close`.
+
+## Telescope
+
+Telescope is a `fzf` like fuzzy finder that is useful for navigating through lists of files, buffers, git commits and more. To open up Telescope plugin in Neovim to see what commands are available type `:Telescope`. This will open up a window where you can click into `find_files` for instance and navigate files, or `git_commits` to navigate through git history with diffs.
+
+The most useful of Telescope key maps is:
+
+* `<leader>sf` - searches files
+* `<leader>s.` - searches recent files
+* `<leader>sg` - searches for string recursively in files from current working directory using `ripgrep` tool. <GreenHighlight>It's not grepping for file, but file contents, so **super useful for finding code snippets or functions across project**.</GreenHighlight>.
+* `<leader><leader>` - searches for open buffers
+
+### Buffers
+
+So why is it good to have `<leader><leader>` to open buffers? My first thought to opening buffers is - why would I ever be in a situation where I have a file in buffer that I have not already opened? If a file is in buffer wouldn't I already have a nvim window on it?
+
+My mental model of what is happening with files in neovim is actually wrong. When a file is opened in neovim e.g. `nvim filename.txt`, neovim loads it into a buffer. The fact is that if you exit, <GreenHighlight>the buffer still exists even when you're not looking at it</GreenHighlight>. A window doesn't make the buffer persist. A window is just **a view into a buffer**. When you close a window, you close the view, but the buffer stays open!
+
+Say you are currently on `file1.txt` open on neovim, and you type `:edit file2.txt` to switch to a different file. The current window shows `file2.txt` buffer, but `file1.txt` is actually still in buffer 1 behind the scenes. To switch back you can just do `:buffer 1` or use `<leader><leader>` to fuzzy pick `file1.txt`.
 
 ## Powerful LSPs
 
