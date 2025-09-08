@@ -38,6 +38,44 @@ Observe that at $\beta = 1$ the weighting is equal and it defaults to the normal
 
 Harmonic means shows up in rates and ratios. Why? Suppose you drive a car 60mph for $d$ miles, and then return at 30mph for $d$ miles. What is the average speed? The average speed is NOT the arithmetic mean $\frac{60+30}{2} = 45$, because it assumes the same time elapsed between the two.
 
+## AUPRC
+
+The metric <BlueHighlight>AUPRC</BlueHighlight> stands for the Area Under the Precision Recall Curve, and is a useful performance metric in addition to F1 score for capturing ability to predict positives in an imbalanced dataset. A perfect AUPRC means predicting all the positives correctly without any false positives. AUPRC also <GreenHighlight>captures how the model performs at different thresholds</GreenHighlight> - so it is fine grained at the level of probabilities (a model that has ambivalent probabilities will be distinguished from a model that is more confident), not just the actually binary outcomes!
+
+To calculate AUPRC it is important to know about the <BlueHighlight>Precision-Recall Curve</BlueHighlight>, which shows tradeoff between precision and recall across different decision thresholds. As we change the classification threshold across a list of values $0, 0.1, 0.2, \ldots, 0.9, 1.0$ we get a corresponding confusion matrix, precision, and recall for each, which we can plot as a point on the graph. We don't actually need to try every single probability threshold - for starters you can limit the thresholds to the discrete set of probability values in the model prediction, so if the model only predicts $0.01, 0.99$ as probabilities, then you only need to check the two thresholds.
+
+A good place to start conceptualizing this curve is the perfect case. A perfect AUPRC of $1.0$ corresponds to a square on the plot from `(0, 1)` recall + precision to `(1, 1)` to `(1, 0)`.
+
+'''text
+# subtlety: while rec = 0/FN = 0, prec is undefined 0/0. Convention is prec=1 since no FP mistakes made (CAVEAT IN THE DETAIL BELOW!)
+Threshold = 1 ==> all examples classified negative, so no FP and no TP: rec=0, prec=1 (see above)
+# top right corner of square
+0 < Threshold < 1 ==> all examples classified correctly, so no FP, FN: rec=1, prec=1
+# bottom right corner (note it doesn't always end at prec=0)
+Threshold = 0 ==> all examples classified positive, so no FN: rec=1, prec=0
+'''
+
+:::note[Detail]
+
+Although you might think that the AUPRC curve should always start at the top left corner (`rec=0, prec=1`), it might not be in practice - it boils down to label of the example with the top predicted score. Remember: we start with threshold of 1 with everything labeled negatively and start lowering it so positive labels crop up. In practice, the **very first positive prediction happens at the highest predicted score**, i.e. the model's top ranked example say `0.99999`. If the top scoring example is actually a positive ground truth, then we start from the top left corner `(0, 1)` artificial point and proceed to the first data point `rec>0, prec=1`. BUT if the top scoring example is negative, then the first positive label will contribute to the FP, so you have the first data point as `rec=0, prec=0`, resulting in the model starting from `(0, 0)`.
+
+Really `(0, 0)` is just an artifact added depending on certain cases for the plot to work.
+
+Similarly the `(1, 0)` point is also an artifact added for plotting.
+
+:::
+
+A PR curve often ends at the lower right because at threshold of `0` the recall is perfect `1` but the precision is low.
+
+The AUPRC is calculated as the area beneath the PR curve, which can be plotted on a graph with recall on the x-axis and precision on the y-axis ranging from 0 to 1.
+With AUPRC the **baseline** is equal to the fraction of positives among total cases.
+A class with 12% positives has 0.12 as the AUPRC baseline, so 0.40 AUPRC is considered good.
+A class with 98% positives and a 0.98 AUPRC is bad.
+
+Why do we care about the tradeoff between recall and precision? With at decision threshold of `0.5` you might not be at the optimal threshold for recall and precision! Especially if the class distribution is imbalanced. If the positive instance is rare, you might need to lower the threshold to detect them and boost recall. 
+
+For my ML experiment, it is possible to keep using F1 at $0.5$ threshold as development time objective, but it is important to inspect the PR curve after and find the best threshold and its corresponding F1 score.
+
 ## Python as an Interpreter
 
 I've found an urge to branch out of Python because while it is quite a useful and simplistic programming language for machine learning tasks, it is not as useful for building fast applications. I've encountered many difficulties with bottlenecks with Python scripts.

@@ -39,4 +39,18 @@ Say you are currently on `file1.txt` open on neovim, and you type `:edit file2.t
 
 ## Powerful LSPs
 
+:::info[Key Idea]
+
+What is a Language Server Protocol (LSP)? It is a specification that defines the protocol of communication between an **editor** and a **language server** to allow for features like auto-complete, go to definition, etc. The language server communicates with the **client** which is your editor. The editor spawns the LSP process, and lets the server know about what's happening. A request to the LSP server from your editor might be "hey tell me where this thing is defined", and the LSP responds "hey this definition file, and the start and end range". Server can also send notification to the client to say "this build failed" or "there is a type error here".
+
+This turns the `M x N` editor - language problem into a `M + N` solution! Before LSPs, each editor would have some bespoke custom implementation for working with each language. The LSPs abstract this away so each editor can just plug it in and work with any kind of language.
+
+:::
+
 With LSPs you have language specific tools such as `grd` to jump to definition of the function, and `grr` to go to reference (if there exists multiple it will provide a list for you to choose). You can also use `K` to see documentation pop up for a function.
+
+A list of LSP commands:
+- `grn` renames all references of the symbol under the cursor
+- `gra` shows a list of code actions available in the line under the cursor
+- `grr` lists all references of the symbol under the cursor
+- `gri` lists all the implementations for the symbol under the cursor
