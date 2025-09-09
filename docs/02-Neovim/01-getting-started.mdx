@@ -119,6 +119,12 @@ You can also limit substitutions to lines selected in Visual mode.
 
 You can also view two parts of the same file by using `:split` for horizontal, and `:vsplit` for vertical, and jump between them using `Ctrl+w+[arrow]`. Close the window with `:close` or close all except the one with `:only`. Quit all windows with `:qall` or `:wqall`.
 
+:::tip[Trick]
+
+Split faster using abbreviations `:sp` for horizontal split and `:vsp` for vertical split!
+
+:::
+
 You can also open a window on a new file using `:new` and then saving it with filename using `:saveas move.c`.
 
 ## Core Concepts: Registers and Buffers
@@ -137,8 +143,13 @@ The key difference is purpose: registers store copied/cut text snippets for past
 
 Use `~` to toggle the case of a cursor character or selection. Use `gU` for uppercasing, `gu` for lowercasing.
 
+## Indentation
+
+So far I am figuring out my indentation by using `V` to select lines and `=` on the selection to auto-indent.
+
 ## Resources
 
 Useful guides to consult:
 - Practical Vim by Drew Neil (pdf can be found online)
 - Neovim user manual starting from [page 1](https://neovim.io/doc/user/usr_01.html#usr_01.txt)
+- Super cool [Neovim cheatsheet](https://www.barbarianmeetscoding.com/boost-your-coding-fu-with-vscode-and-vim/cheatsheet/) that summarizes all commands

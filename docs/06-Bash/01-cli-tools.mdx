@@ -69,6 +69,12 @@ ffmpeg -i input.mp4 -t 5 -ss 00:00:03 -vf "scale=500:-1" output.gif
 
 `ffmpeg` is more like a bare metal video editor and media toolkit accessible directly through CLI.
 
+## Tmux
+
+Some useful things I have learnt for managing the terminal multiplexer:
+
+For swapping windows, do `<Prefix> + :` to open up the tmux command then type `swap-window -t 1` for **swapping the current window with the first window**. Use `swap-window -s 2 -t 5` to swap src window 2 with target window 5.
+
 ## Resources
 
 - `fzf` intro video [here](https://www.youtube.com/watch?v=qgG5Jhi_Els&ab_channel=AlexeySamoshkin)

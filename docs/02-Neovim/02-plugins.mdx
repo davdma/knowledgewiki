@@ -28,6 +28,7 @@ The most useful of Telescope key maps is:
 * `<leader>s.` - searches recent files
 * `<leader>sg` - searches for string recursively in files from current working directory using `ripgrep` tool. <GreenHighlight>It's not grepping for file, but file contents, so **super useful for finding code snippets or functions across project**.</GreenHighlight>.
 * `<leader><leader>` - searches for open buffers
+* `<leader>sw` - search current word under cursor (though this searched across all files, not just the current file!)
 
 ### Buffers
 
@@ -50,7 +51,40 @@ This turns the `M x N` editor - language problem into a `M + N` solution! Before
 With LSPs you have language specific tools such as `grd` to jump to definition of the function, and `grr` to go to reference (if there exists multiple it will provide a list for you to choose). You can also use `K` to see documentation pop up for a function.
 
 A list of LSP commands:
-- `grn` renames all references of the symbol under the cursor
-- `gra` shows a list of code actions available in the line under the cursor
+- `grn` renames all references of the symbol under the cursor - **super useful if you want to change a class attribute's name!**
 - `grr` lists all references of the symbol under the cursor
+- `grd` jump to definition, where a variable was first declared or function defined
+- `gra` shows a list of code actions available in the line under the cursor
 - `gri` lists all the implementations for the symbol under the cursor
+
+### Autocompletion
+
+With the LSP plugin there is also a plugin called `blink.cmp` which supports autocompletion while typing. With the default config, `<Ctrl+y>` accepts the completion. You can use arrow keys to move up and down the list of possible completions. To exit out of the completion window and get back to the original typed text, just do `<Ctrl+e>`. More info can be found in `:help ins-completion`.
+
+:::tip [Trick]
+
+The autocompletion feature can be really helpful when you are trying to type out a really long class or function name.
+
+:::
+
+## Neovim Mini-Surround
+
+One tedious motion is adding quotation marks or parentheses around a phrase or word.
+Instead of moving the cursor to the beginning, going into insert mode, exiting, then repeating for the end, there is a plugin `mini-surround` to add surrounding characters to a selection or motion with no more than a few key strokes.
+
+The commands are `sa` for add surrounding, `sd` for delete surrounding, and `sr` for replace surrounding.
+
+:::warning[Pitfall]
+
+Visual selection and motion only works for adding surround character with `sa`. It does not work with `sd` and `sr` which are more smart and will search for the character you provide - therefore it does not take in selection or motion as input, only the character of interest!
+
+So if you try `sdip` it will not delete a character around the inner paragraph, but do something funny. Instead just do `sd` followed by the surrounding quotation marks or character you want deleted. Same goes for `sr`, just type the character you want replaced immediately after.
+
+:::
+
+Examples:
+- saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
+- sais" - [S]urround [A]dd [I]nner [S]entence ["]quotes
+- saaW" - [S]urround [A]dd [A]round [W]ord ["]quotes
+- sd'   - [S]urround [D]elete [']quotes
+- sr)'  - [S]urround [R]eplace [)] [']
