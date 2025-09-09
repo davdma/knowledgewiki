@@ -46,14 +46,14 @@ To calculate AUPRC it is important to know about the <BlueHighlight>Precision-Re
 
 A good place to start conceptualizing this curve is the perfect case. A perfect AUPRC of $1.0$ corresponds to a square on the plot from `(0, 1)` recall + precision to `(1, 1)` to `(1, 0)`.
 
-'''text
+```txt
 # subtlety: while rec = 0/FN = 0, prec is undefined 0/0. Convention is prec=1 since no FP mistakes made (CAVEAT IN THE DETAIL BELOW!)
 Threshold = 1 ==> all examples classified negative, so no FP and no TP: rec=0, prec=1 (see above)
 # top right corner of square
 0 < Threshold < 1 ==> all examples classified correctly, so no FP, FN: rec=1, prec=1
 # bottom right corner (note it doesn't always end at prec=0)
 Threshold = 0 ==> all examples classified positive, so no FN: rec=1, prec=0
-'''
+```
 
 :::note[Detail]
 
@@ -65,24 +65,50 @@ Similarly the `(1, 0)` point is also an artifact added for plotting.
 
 :::
 
+:::tip[Trick]
+
+PR curves can be thought of as simply dependent on the **ranking** of the scores given to each example.
+Listing the scores from highest to lowest, you sweep down the list and recalculate the confusion matrix, precision, and recall at each step or cutoff.
+
+:::
+
 A PR curve often ends at the lower right because at threshold of `0` the recall is perfect `1` but the precision is low.
 
 The AUPRC is calculated as the area beneath the PR curve, which can be plotted on a graph with recall on the x-axis and precision on the y-axis ranging from 0 to 1.
-With AUPRC the **baseline** is equal to the fraction of positives among total cases.
+Observe that PR curves do not consider the number of **true negatives** due to the focus on precision and recall. As a result AUPRC is unaffected by imbalanced dataset classes with a large percentage of negative cases.
+
+How do we interpret AUPRC? With AUPRC the **baseline** is equal to the fraction of positives among total cases.
+Here's why: say the classifier was no better at random guessing. If you have $N$ total examples, $P$ positive examples, the positive rate is $r = \frac{P}{N}$. Your classifier would spit out a ranking (relevant to PR curve) of each example by probability score. If the classifer guesses, then the ranking is completely random, and for any cutoff with $M$ examples above it, there will be $r * M$ TP and $(1-r)M$ FP, so the precision is always approximately $\frac{rM}{rM + (1-r)M} = \frac{rM}{M} = r$. As for the recall, if you have $N-m$ negative predictions, it will be $\frac{mr}{mr + (N-m)r} = \frac{mr}{Nr} = \frac{m}{N}$ which is just the proportion of positive predictions changing linearly with the cutoff. This makes sense for recall, because at 50% threshold you've only captured 50% of the positive cases, and at 100% you've captured 100% of the positive cases. Integrating the PR curve, $\text{AUPRC} = \int_{0}^{1} rd(\text{recall}) = r \cdot \int_{0}^{1} d(\text{recall}) = r$. Hence we get the baseline being the rate of positives.
 A class with 12% positives has 0.12 as the AUPRC baseline, so 0.40 AUPRC is considered good.
 A class with 98% positives and a 0.98 AUPRC is bad.
 
-Why do we care about the tradeoff between recall and precision? With at decision threshold of `0.5` you might not be at the optimal threshold for recall and precision! Especially if the class distribution is imbalanced. If the positive instance is rare, you might need to lower the threshold to detect them and boost recall. 
+![AUPRC math](/img/auprc.png)
+
+Why do we care about the tradeoff between recall and precision? With a decision threshold of `0.5` you might not be at the optimal threshold for recall and precision! Especially if the class distribution is imbalanced. If the positive instance is rare, you might need to lower the threshold to detect them and boost recall. 
 
 For my ML experiment, it is possible to keep using F1 at $0.5$ threshold as development time objective, but it is important to inspect the PR curve after and find the best threshold and its corresponding F1 score.
+
+## ROC-AUC
+
+The <BlueHighlight>Receiver Operating Characteristic</BlueHighlight> (ROC) curve also represents model performance across thresholds. The curve shows the false positive rate (FPR) on the x-axis and the true positive rate (TPR) on the y-axis. The ROC-AUC or area under the ROC curve is the probability that the model, if randomly given a positive and negative example, will rank the positive higher than the negative, irrespective of what the actual threshold is.
+
+![ROC-AUC examples](/img/roc-auc.png)
+
+For a binary classifier with random guesses (e.g. a coin flip), the ROC-AUC is $0.5$.
+
+## IoU
+
+Intersection Over Union
 
 ## Python as an Interpreter
 
 I've found an urge to branch out of Python because while it is quite a useful and simplistic programming language for machine learning tasks, it is not as useful for building fast applications. I've encountered many difficulties with bottlenecks with Python scripts.
 
+Python bytecode interpreter.
+
 ## Codecs
 
-When talking about `ffmpeg` a term that comes up a lot is <BlueHighlight>codecs</BlueHighlight>. A codec is a **software or algorithm that encodes raw audio/video into a compressed format for storage or transmission and decodes the compressed format back into the original form. In `ffmpeg` codecs are implemented as modules that handle these encoding and decoding operations. An example of a codec supported by `ffmpeg` is mp3! In the API codecs are abstracted as `AVCodec` (Audio Video Codec). Choosing the type of codec determines the compression efficiency, quality and encoding/decoding speed.
+When talking about `ffmpeg` a term that comes up a lot is <BlueHighlight>codecs</BlueHighlight>. A codec is a **software or algorithm that encodes raw audio/video into a compressed format** for storage or transmission and decodes the compressed format back into the original form. In `ffmpeg` codecs are implemented as modules that handle these encoding and decoding operations. An example of a codec supported by `ffmpeg` is mp3! In the API codecs are abstracted as `AVCodec` (Audio Video Codec). Choosing the type of codec determines the compression efficiency, quality and encoding/decoding speed.
 
 Here is a slice of the large list of available codecs you get by running `ffmpeg --codecs`:
 
@@ -97,3 +123,7 @@ Here is a slice of the large list of available codecs you get by running `ffmpeg
  DEAIL. nellymoser           Nellymoser Asao
  DEAIL. opus                 Opus (Opus Interactive Audio Codec) (decoders: opus libopus ) (encoders: opus libopus )
 ```
+
+## Resources
+
+- [AUPRC Video](https://www.youtube.com/watch?v=fF0MvCPsEp8&t=2s&ab_channel=RachitToshniwal) + [article](https://glassboxmedicine.com/2019/03/02/measuring-performance-auprc/)
