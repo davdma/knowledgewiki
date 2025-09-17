@@ -170,7 +170,7 @@ class Box:
 
 :::note[Detail]
 
-The `dataclasses` `field` is not to be confused with the Pydantic `Field`. The concept is the same and Pydantic fields are also similarly defined by type annotations with customization with `Field`. The point of <BlueHighlight>field</BlueHightlight> across both cases is to represent a well designed class attribute for data storage and manipulation.
+The `dataclasses` `field` is not to be confused with the Pydantic `Field`. The concept is the same and Pydantic fields are also similarly defined by type annotations with customization with `Field`. The point of <BlueHighlight>field</BlueHighlight> across both cases is to represent a well designed class attribute for data storage and manipulation.
 
 :::
 
@@ -219,7 +219,7 @@ from . import tuning
 
 ```
 
-With empty `__init__.py`, python behavior is lazy and will only import the module from the package and run it when it is explicitly imported. If you add `from .training import train_s2`, then `train_s2` is a `floodmaps` attribute i.e. accessible with `floodmaps.train_s2`. Consequently it makes things easier to import from a top level like `from floodmaps import train_s2`. Similarly, if you do `from . import models` inside `__init__.py`, now it is loaded in under `floodmaps`. Instead of `import floodmaps.models` you can simply do `import floodml` and automatically have `floodml.models` available. Then you can also have `from floodml import models`. Without it, `from floodml import models` will throw an import error!
+With empty `__init__.py`, python behavior is lazy and will only import the module from the package and run it when it is explicitly imported. If you add `from .training import train_s2`, then `train_s2` is a `floodmaps` attribute i.e. accessible with `floodmaps.train_s2`. Consequently it makes things easier to import from a top level like `from floodmaps import train_s2`. Similarly, if you do `from . import models` inside `__init__.py`, now it is loaded in under `floodmaps`. Instead of `import floodmaps.models` you can simply do `import floodmaps` and automatically have `floodmaps.models` bound in its namespace. You could also do `from floodmaps import models` - without it, this will throw an import error!
 
 It can be confusing at first but it's all about bringing things into scope. A simple `import X` binds the module to the name `X`. A `from X import Y` looks inside the namespace of `X` and adds `Y` to the current scope. If you want something directly inside namespace without needing to do `floodmaps.training` you will have to explicitly request it. Hence the `__init__.py` autoimporting can be a useful feature.
 
@@ -233,11 +233,11 @@ from .utils.utils import DATA_DIR, RESULTS_DIR, MODELS_DIR
 
 ```
 
-Adding this allows you to do `from floodml import Config, DATA_DIR, RESULTS_DIR, MODELS_DIR` instead of `from floodml.utils.config import Config` etc.
+Adding this allows you to do `from floodmaps import Config, DATA_DIR, RESULTS_DIR, MODELS_DIR` instead of `from floodmaps.utils.config import Config` etc.
 
 :::warning[Pitfall]
 
-In modern python with implicit namespace packages, `__init__.py` is often not needed as folders will automatically be treated as packages if you try to import from it.
+In modern python with implicit namespace packages, `__init__.py` is often not needed as folders will automatically be treated as packages if you try to import from it. However, it's still better to have it in order to be explicit about your code as a package. You'll probably want to customize the symbols in the namespace using `__init__.py` anyways.
 
 :::
 
@@ -245,7 +245,7 @@ One really useful thing for example when starting out is to pip install the repo
 
 ### `PYTHONPATH`
 
-The `PYTHONPATH` is an environment variable commonly set <GreenHighlight>to tell the python interpreter where to look for modules and packages before standard locations</GreenHighlight>, extending the import search path. From the python docs it 'augments the default search path for module files". However, if you have your python project configured as a package, you can install it with `pip install -e .` which adds your package path so it can be found.
+The `PYTHONPATH` is an environment variable commonly set <GreenHighlight>to tell the python interpreter where to look for modules and packages before standard locations</GreenHighlight>, extending the import search path. From the python docs it "augments the default search path for module files". However, if you have your python project configured as a package, you can install it with `pip install -e .` which adds your package path so it can be found.
 
 ```bash
 
