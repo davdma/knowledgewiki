@@ -1,0 +1,74 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Shell Scripting
+
+Much of the notes are taken from `Classic Shell Scripting` book.
+
+## Intro
+
+What is <BlueHighlight>Unix</BlueHighlight>? Unix is an **operating system** with a command line interface, developed at Bell Labs in 1970. It served as a backbone for many of the modern OSes like Linux or MacOS. Due to the diversity of Unix systems and their tools (`grep` might have different flags between systems), the POSIX standards were developed to establish a set of standardized tools and options. Hence, shell scripts became portable!
+
+What is the <BlueHighlight>shell</BlueHighlight>? As opposed to an OS, the shell is a **user interface to the OS**. Typically this is via a command line interface. Shells like `sh`, `bash` or `zsh` for example are interpreter programs that can intepret your commands and communicate with the OS. 
+
+## Scripting
+
+The shell scripting language is just like Python, Perl and Ruby - it's a high level language where you can express complex operations clearly and easily, and you can write a powerful useful script in short amount of time. They are not compiled but **interpreted** so a compiled program **interpreter** will read the script and translate it into an internal form before executing it.
+
+## Principles
+
+* Lines of text are the universal format in Unix - not binary.
+* Write programs to read from stdin and write to stdout, with error messages to stderr. This makes programs easy to use as <BlueHighlight>data filters</BlueHighlight> which act as components in larger pipelines or scripts.
+* Avoid messages mixed into stdout of program (at least by default).
+
+## The `#!` Shebang
+
+The special first lines in the script start with `#!` to specify to the kernel the full path to **the interpreter** to use to run the program, as well as a single option to pass to the interpreter.
+
+Typically shell scripts start like this:
+```bash
+#! /bin/sh
+```
+
+Which will run `bin/sh scriptname` under the hood.
+
+:::note[Detail]
+
+The `sh` references a command interpreter (shell) which is **NOT** an operating system.
+
+:::
+
+```bash
+#! /bin/csh -f
+```
+
+Or invoke a standalone `awk` program with,
+
+```bash
+#! /bin/awk - f
+```
+
+## Commands and Args
+
+With shell there are:
+1. built-in commands - e.g. `cd`
+2. shell functions - self contained chunks of code written in shell language that act like regular commands
+3. external commands - commands the shell runs by creating a separate process
+
+With commands, short options can start with a dash `-c`, while long options can start with one dash `-p1` or two `--backup`.
+Semicolons `;` separate multiple commands on the same line so the shell will execute them sequentially
+
+### Variables
+
+Define variables with `=` and no intervening spaces.
+
+```bash
+myvar=this_is_a_long_string
+echo $myvar
+
+first=isaac  middle=bashevis last=singer # multiple assignments allowed per line
+fullnam="$first $middle $last"
+```
+
+### `echo`
+
+Echo prints each of its arguments to stdout separated by a single space and terminated with newline.

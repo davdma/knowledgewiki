@@ -1,0 +1,254 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Python
+
+## Class Attributes
+
+As opposed to instance attributes, class attributes are shared across all instances of a class:
+
+```python
+class Dog:
+    species = "Canis familiaris" # class attribute
+
+    def __init__(self, name):
+        self.name = name # instance attribute
+```
+
+Class attributes are also mutable, but this is not safe. By convention, class attributes are used for immutable things, while instance attributes serve to store mutable things.
+
+## Decorators
+
+What are python decorators for?
+
+The motivation of decorators in Python is <GreenHighlight>to apply some transformation to a function or method</GreenHighlight>. This allows for simple modification or extension of the function behavior (think of it as taking a function, wrapping it in additional functionality, and replacing the original function). For instance, the snippet:
+
+```python
+@dec1
+@dec2
+def func(arg1, arg2, ...):
+    pass
+```
+
+is no different in its intent than the snippet:
+```python
+def func(arg1, arg2, ...):
+    pass
+func = dec2(dec1(func))
+```
+
+**Decorators can be stacked, which can be thought of as composing them together!** For instance,
+
+```python
+@decomaker(argA, argB, ...)
+def func(arg1, arg2, ...):
+    pass
+```
+
+is equivalent to:
+
+```python
+func = decomaker(argA, argB, ...)(func)
+```
+
+Here are the most common decorators you should know:
+* `@property` - turns function into property or attribute style getter e.g. `Circle.area` to get the value
+* `@classmethod` - use `cls` instead of `self` to call function, so receives the class itself as the first argument. Usually this is used for alternative constructor functions that provide other ways to instantiate an object - you pass in `cls` then it returns `cls(name, int(age))` for example.
+* `@staticmethod` - defines method without `self` handle that lives in the class namespace so it doesn't depend on instance or class e.g. `MathUtils.add(3, 4)`
+* `@abstractmethod` - makes a method that must be implemented
+
+## Abstract Base Classes (ABC)
+
+An Abstract Base Class has the property that it cannot be instantiated directly, only inherited like an interface. A class that inherits from an ABC must implement **all of its abstract methods**.
+
+```python
+from abc import ABC, abstractmethod
+
+class Animal(ABC):
+    # every subclass of Animal must implement speak()
+    @abstractmethod
+    def speak(self):
+        pass
+```
+
+Abstract classes can still have regular class attributes and methods that get inherited by children:
+
+```python
+class Animal(ABC):
+    species = "Unknown" # class attribute
+    
+    def __init__(self, name):
+        self.name = name # instance attribute
+```
+
+## Data Classes
+
+The python dataclasses decorator `dataclass` allows you to create structs (will automatically generate boilerplate `__init__` constructors). That way you save yourself having to create an `__init__` with all the struct arguments and then storing them in `self.arg = arg`.
+
+The way it works is that the decorator will look for **fields** in the class which are **class variables with type annotations**, and generates the methods with the fields in the order they were defined in the class.
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Box:
+    name: str
+    unit_price: float
+    quantity: int
+
+    def total_value(self) -> float:
+        return self.unit_price * self.quantity
+
+    # Automatically generated so we don't need this:
+    # def __init__(self, name: str, unit_price: float, quantity: int):
+        # self.name = name
+        # self.unit_price = unit_price
+        # self.quantity = quantity
+```
+
+### `field`
+
+You will find it useful to also import `field` method from `dataclasses` module.
+
+A `field` is by default implicitly run for each annotated class variable defined in the `dataclass`. A class variable `name: str` is implicitly treated as `name: str = field()` with no arguments, so it's default value is set to None. When you initialize a class variable `y: int = 5` in the class definition, the default is passed into the `field` method like `y: int = field(default=5)`.
+
+A point of confusion to avoid is whether the varariable is shared among all instances or particular to an instance variable. See the following nuance:
+
+```python
+@dataclass
+class Person:
+    names: List[str] = []
+
+p1 = Person()
+p2 = Person()
+p1.names.append("Dave")
+
+print(p2.names) # ['Dave'] - it's shared!
+```
+
+But if we do this it is unique to each instance:
+
+```python
+@dataclass
+class Person:
+    names: List[str] = field(default_factory=list) # not [] as it expects a callable
+
+p1 = Person()
+p2 = Person()
+p1.names.append("Dave")
+
+print(p2.names) # [] Not shared!
+```
+
+What happens is that in the first example the list gets created at class definition time, resulting in each of the dataclass instances inheriting the reference to the same list object. In the second example the list gets created during instance construction, so the list for each instance is unique.
+
+:::warning[Pitfall]
+
+**Python class attributes:**
+
+In learning about this, I think I had a misconception about regular Python class attributes, in that once they are initialized, they will always be shared by instances. If the instances tried to override them, the replaced value is still shared across variables.
+
+The reality is that the initialized value at class definition time is shared among instances, but instances are free to override the attribute namespace and set a value for themselves (that does not get propagated to the other instances)!
+
+At class definition time, any attributes assigned at the top without `__init__` become class attributes. When instances lookup attributes, they first check their own `__dict__` and if not found will default to the attribute until it gets shadowed.
+
+Thus `@dataclass` does not break the rules of regular Python when it comes to the behavior of class variables and instance variables. It just generates boiler plate code `__init__`, `__repr__`, `__eq__` etc. so you do not have to.
+
+:::
+
+Now if you want to specify kwargs for the field beyond the default, you can pass that in explicity with options such as `default`, `default_factory`, `init`, `repr`:
+
+```python
+from dataclasses import dataclass, field
+
+@dataclass
+class Box:
+    name: str
+    unit_price: float
+    quantity: int = field(repr=False) # field not included in string representation
+    width: int = field(repr=False, default=5)
+```
+
+:::note[Detail]
+
+The `dataclasses` `field` is not to be confused with the Pydantic `Field`. The concept is the same and Pydantic fields are also similarly defined by type annotations with customization with `Field`. The point of <BlueHighlight>field</BlueHightlight> across both cases is to represent a well designed class attribute for data storage and manipulation.
+
+:::
+
+## Python Packages
+
+One thing I have learned when working with Python projects is that is important before starting to think about the audience and the environment you want to run the program in. If you want to deploy and share your code for other developers or users, having this figured out before hand saves a lot of headache later on. Otherwise you will find yourself in a mess trying to restructure your project into a proper package way down the line.
+
+<BlueHighlight>Packages</BlueHighlight> helps consolidate a growing collection of modules or python scripts, so you have dotted module names, e.g. `A.B` for submodule `B` in package `A`. The `__init__.py` scripts make directories containing the file as packages.
+
+### `__init__.py`
+
+In the simplest form, `__init__.py` can be empty - **it marks directory it is in as a python package**. You can also add initialization code inside `__init__.py` to import certain functions/classes or run setup code when the package is imported. <GreenHighlight>A key functionality to allow you to setup a package's namespace upon import.</GreenHighlight>
+
+The `__all__` inside a package's `__init__.py` is interpreted as a list of module names to be imported with the statement `from package import *`. The purpose is simply to allow the `import *` syntax, otherwise it is unnecessary.
+
+```python
+
+# from sound.effects import * -> imports three submodules
+__all__ = ["echo", "surround", "reverse"]
+
+```
+
+What about the other stuff typically in a `__init__.py` file? When you add these statements into the `__init__.py`, the submodules are explicitly loaded when the package is imported:
+
+```python
+
+"""
+AI Flood Detection Package
+
+This package contains modules for flood detection using satellite imagery,
+including data preprocessing, model architectures, training, and inference.
+"""
+
+__version__ = "1.0.0"
+__author__ = "Hydrosm DMA Team"
+
+# Make key components easily importable
+from . import models
+from . import utils
+from . import training
+from . import preprocess
+from . import sampling
+from . import inference
+from . import benchmarking
+from . import tuning
+
+```
+
+With empty `__init__.py`, python behavior is lazy and will only import the module from the package and run it when it is explicitly imported. If you add `from .training import train_s2`, then `train_s2` is a `floodmaps` attribute i.e. accessible with `floodmaps.train_s2`. Consequently it makes things easier to import from a top level like `from floodmaps import train_s2`. Similarly, if you do `from . import models` inside `__init__.py`, now it is loaded in under `floodmaps`. Instead of `import floodmaps.models` you can simply do `import floodml` and automatically have `floodml.models` available. Then you can also have `from floodml import models`. Without it, `from floodml import models` will throw an import error!
+
+It can be confusing at first but it's all about bringing things into scope. A simple `import X` binds the module to the name `X`. A `from X import Y` looks inside the namespace of `X` and adds `Y` to the current scope. If you want something directly inside namespace without needing to do `floodmaps.training` you will have to explicitly request it. Hence the `__init__.py` autoimporting can be a useful feature.
+
+If there is a submodule multiple directories deep, to make it more accessible at top level,you can add `from .models.training.utils.package import function` in `__init__.py`. Then do `from floodmaps import function` in any script you want. Reduces the problem of a long `from floodmaps.models.training.utils.package import function` import line.
+
+```python
+
+# Expose commonly used utilities
+from .utils.config import Config
+from .utils.utils import DATA_DIR, RESULTS_DIR, MODELS_DIR
+
+```
+
+Adding this allows you to do `from floodml import Config, DATA_DIR, RESULTS_DIR, MODELS_DIR` instead of `from floodml.utils.config import Config` etc.
+
+:::warning[Pitfall]
+
+In modern python with implicit namespace packages, `__init__.py` is often not needed as folders will automatically be treated as packages if you try to import from it.
+
+:::
+
+One really useful thing for example when starting out is to pip install the repo as editable `pip install -e`. This allows you to sidestep annoying relative imports in a multiscript project.
+
+### `PYTHONPATH`
+
+The `PYTHONPATH` is an environment variable commonly set <GreenHighlight>to tell the python interpreter where to look for modules and packages before standard locations</GreenHighlight>, extending the import search path. From the python docs it 'augments the default search path for module files". However, if you have your python project configured as a package, you can install it with `pip install -e .` which adds your package path so it can be found.
+
+```bash
+
+export PYTHONPATH=/home/user/myproject
+
+```

@@ -61,11 +61,15 @@ A list of LSP commands:
 
 With the LSP plugin there is also a plugin called `blink.cmp` which supports autocompletion while typing. With the default config, `<Ctrl+y>` accepts the completion. You can use arrow keys to move up and down the list of possible completions. To exit out of the completion window and get back to the original typed text, just do `<Ctrl+e>`. More info can be found in `:help ins-completion`.
 
-:::tip [Trick]
+:::tip[Trick]
 
 The autocompletion feature can be really helpful when you are trying to type out a really long class or function name.
 
 :::
+
+### Toggle comments
+
+For commenting multiple lines of code, select them in visual mode and type `gc` for toggle comment. The same goes for uncommenting.
 
 ## Neovim Mini-Surround
 
@@ -78,7 +82,7 @@ The commands are `sa` for add surrounding, `sd` for delete surrounding, and `sr`
 
 Visual selection and motion only works for adding surround character with `sa`. It does not work with `sd` and `sr` which are more smart and will search for the character you provide - therefore it does not take in selection or motion as input, only the character of interest!
 
-So if you try `sdip` it will not delete a character around the inner paragraph, but do something funny. Instead just do `sd` followed by the surrounding quotation marks or character you want deleted. Same goes for `sr`, just type the character you want replaced immediately after.
+So if you try `sdip` it will not delete a character around the inner paragraph, but do something funny. Instead just do `sd` followed by the surrounding quotation marks or character you want deleted. Same goes for `sr`, just type the character you want replaced immediately after, followed by the character you want to replace it with.
 
 :::
 

@@ -125,6 +125,24 @@ Here's an easy visualization of how the set and the binary classification defini
 
 ![IoU sketch](/img/IoU.png)
 
+## `hydra` ML Configs
+
+`hydra` works closely with the package `omegaconf` for `DictConfig` objects. This allows you to easily import `.yaml` config files into a python config object and access variables either dictionary style or via object attributes.
+
+One powerful thing I learned in the process about `omegaconf` is <BlueHighlight>interpolation</BlueHighlight>. It allows you to reference other variables across the entire config tree. For example, if I have paths defined in a group `paths` and then want to set a weights path in the group `train` using of those previously defined paths, I don't need to duplicate the path to the again, I can interpolate the strings over with `${foo.1}` dot notation. By default interpolation is absolute, but relative is also possible e.g. `${..foo}`. See this example:
+
+```python
+
+paths:
+    base_dir: ${oc.env:PROJECT_ROOT,/lcrc/project/hydrosm/dma}
+    data_dir: ${base_dir}/data
+    output_dir: ${base_dir}/outputs
+train:
+    # No need to duplicate paths here!
+    weights: ${paths.data_dir}/experiments/unet_wyhy12/model.pth
+
+```
+
 ## Python as an Interpreter
 
 I've found an urge to branch out of Python because while it is quite a useful and simplistic programming language for machine learning tasks, it is not as useful for building fast applications. I've encountered many difficulties with bottlenecks with Python scripts.

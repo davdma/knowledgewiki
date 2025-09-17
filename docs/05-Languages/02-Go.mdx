@@ -1,0 +1,60 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Golang
+
+## Array vs. Slices
+
+One distinction that confused me with Go is the difference between an array and a slice. An array is strictly `[n]T` of fixed length `n` and type `T` and cannot be resized. For example:
+
+```go
+var a [3]int
+```
+
+Is an array. **The length is part of its type, so it must be known at compile time, not at runtime!** The type `[4]int` is different from type `[5]int` because they differ in length. I made the mistake of thinking something like `[dx]int` is an array, but since `dx` is not known during compilation, this is actually invalid syntax. Once an array is defined all the space is allocated. An array can be useful if you know it is going to be a certain size at compile time, but most of the time it is not the case, hence why in most cases you use dynamically sized slices.
+
+### Go Array Design
+
+One interesting choice that makes Go different from `C` is that all arrays are **zero-initialized**. So arrays of numbers all contain `0` at initialization, booleans all contain `false` and strings are `""`. This was to avoid error prone bugs.
+
+Also unlike `C`, Go arrays are not pointers to the first element, but represent the entire array, so passing it around copies the arrays contents (you can still do `&arr` to get the pointer though). An array in Go is kind of like a struct with indices instead of named fields.
+
+It's possible to also have compiler count the elements in the array literal for you:
+
+```go
+// this will be type [2]string
+b := [...]string{"Penn", "Teller"}
+```
+
+### So What is a Slice?
+
+A <BlueHighlight>slice</BlueHighlight> is a powerful abstraction on top of Go's arrays. A slice is a dynamic window into an underlying array and is denoted by the type `[]T` for a slice of type `T`. The slice <GreenHighlight>does not store any data, just points to an underlying array</GreenHighlight>. If you change elements in a slice, the underlying array elements are changed. It can be created one of two ways: via `make` or via declaring the `[]int` slicing syntax.
+
+For instance, if you already have a pre-existing array like `primes := [6]int{...}` then `primes[1:2]` gets you a slice.
+
+To dynamically allocate zeroed arrays and get the corresponding slice, use `make`:
+
+```go
+s := make([]int, 5) // length 5
+```
+
+You can also use a slice literal which creates an array literal and builds a slice that references it:
+
+```go
+[]bool{true, false, true}
+```
+
+A slice has **length** and **capacity** which can be obtained through `len()` and `cap()`. The length is the length of the slice while capacity is the number of elements in the underlying array (from beginning of slice to end of array, so if your slice begins at index 2 in size 6 array, the capacity is 4). A slice is resizable, so you can use `append` to grow the slice.
+
+```go
+var s []int
+// append one element
+s = append(s, 2)
+// append multiple elements
+s = append(s, 2, 3, 4)
+```
+
+### Slice Under the Hood
+
+Really the slice is just made up of bytes that contain a pointer to the underlying array element, a length int and a cap int.
+
+![sliceinternal](/img/goslices.png)
