@@ -6,9 +6,22 @@ Much of the notes are taken from `Classic Shell Scripting` book.
 
 ## Intro
 
-What is <BlueHighlight>Unix</BlueHighlight>? Unix is an **operating system** with a command line interface, developed at Bell Labs in 1970. It served as a backbone for many of the modern OSes like Linux or MacOS. Due to the diversity of Unix systems and their tools (`grep` might have different flags between systems), the POSIX standards were developed to establish a set of standardized tools and options. Hence, shell scripts became portable!
+What is <BlueHighlight>Unix</BlueHighlight>? Unix is **a family of operating systems** with a command line interface, initially developed at Bell Labs in 1970. It served as a backbone for many of the modern OSes like Linux or MacOS. Due to the diversity of Unix systems and their tools (`grep` might have different flags between systems), the **POSIX standards** were developed to ensure that software tools that conformed to POSIX could run on any of the POSIX compliant OSes - leading to standardized tools. Hence, shell scripts became portable!
 
 What is the <BlueHighlight>shell</BlueHighlight>? As opposed to an OS, the shell is a **user interface to the OS**. Typically this is via a command line interface. Shells like `sh`, `bash` or `zsh` for example are interpreter programs that can intepret your commands and communicate with the OS. 
+
+<details>
+<summary>Even more terms...</summary>
+
+I actually get more confused when I start hearing about GNU/Linux, so here is a helpful analogy of the key differences:
+
+- **Unix:** the original family of OSes
+- **POSIX:** the standard that describes how Unix-like systems should behave so tools can become standardized for all of them
+- **Linux:** an **OS kernel** that when combined with GNU tools makes a fully usable operating system
+- **GNU:** stands for **GNU is not Unix** and is an OS developed and subsequently merged with Linux kernel for a full OS - this is why it is often grouped as GNU/Linux 
+
+
+</details>
 
 ## Scripting
 

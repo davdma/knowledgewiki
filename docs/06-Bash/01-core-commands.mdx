@@ -1,0 +1,40 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Core Commands
+
+Here I list core commands (e.g. `ps`, `du`, `find`) grouped by functionality for proficient use of the shell.
+
+## Navigation and Filesystem
+
+### `pwd` Print Working Dir
+
+`pwd` prints the absolute filepath of the current working directory.
+
+```bash
+pwd
+```
+
+Will print out something like:
+
+```bash
+/home/users/Documents
+```
+
+### `du` Disk Usage
+
+One mistake I used to make is use `ls -lah` to see directory sizes, which always surprisingly small, until I realized it only displayed the size of the directory entry, not its contents. To see actual disk usage of an entire directory, use `du -sh` where `-s` summarizes and `-h` makes the size human readable.
+
+```bash
+# Show size of each subdirectory in current directory
+du -sh *
+
+# Show size of a specific directory (and its subdirectories)
+du -sh path/to/dir
+
+# Show a sorted list of the biggest directories/files
+du -sh * | sort -h
+```
+
+### `df` Disk Free
+
+The `df` command stands for "disk free" and reports the amount of available and consumed disk space on filesystems.

@@ -1,0 +1,18 @@
+# The AI Teacher
+
+I recently stumbled upon a really cool idea for an AI learning workflow that can fundamentally transform learning and retention. The seed was planted when my sailing instructor said something that made me raise my eyebrows. He noted that a student of his (who happened to be a principal at a local high school), recently scored a surprising full marks on the test with only a day's preparation, despite how comprehensive the sailing exam was. The secret? The principal asked ChatGPT to quiz him with practice questions similar to the US Sailing exam. My instructor Julian told me that there wasn't even an official US Sailing mock exam out there, so leveraging the power of ChatGPT to conjure up a mock exam was both clever and effective. After hearing about this, I decided I had to give it a try. I asked ChatGPT to quiz me on the topics of US Sailing that I was least comfortable with - the engine parts, COLREGS, sound signals and navigation lights. I passed with flying colors...
+
+I noticed how quickly I learned just by asking questions to ChatGPT, taking notes from those conversations, and quizzing myself on those learned concepts.
+Combined with my own validation of Claude Code's ability to serve as an effective notetaker in a markdown `git` repository, plus the magic of voice mode in ChatGPT, I started to connect the dots. One possibility is that I can have ChatGPT act as a 24/7 teacher with expertise in any topic I want to learn, and all I have to do is ask it a question with my voice. These conversations are saved as transcripts that are then exposed to the OpenAI API. I can easily have an API fetch that conversation and summarize what I learned into a brain dump or notes repo, and have Claude Code quiz me on the last week of new material I learned.
+
+Hence it is possible to combine the voice mode + agentic capabilities of LLMs to go quickly from a curious question to notes to quizzing. For maximum effectiveness, I wanted to design it around core social psychology principles on learning and retention. This involves integrating these key steps:
+
+1. Retrieval Practice (Quizzes)
+2. Spaced Repetition (Revisit Concepts)
+3. Elaboration (Rubber Ducking, ELI5)
+
+The first is obvious through asking ChatGPT or Claude to look through the notes and materials taken and come up with a quiz to test the learned knowledge. With the second, this can also be done easily by having the agent look through recent `git` commits to the notes and summarize learned concepts across the past week or month and prompt me to recall them. The third is analogous to the case in school where you explain a concept to a peer, or a problem to a rubber duck - just by verbalizing or articulating the thought, you can gain a better understanding. In this case the AI serves as a good rubber duck - it can listen to you talk and give feedback or correct you on mistakes.
+
+Most of the time learning can happen while I'm out and about. Since I do not have my computer in front of me, I might pull out ChatGPT and ask in voice mode conversationally about something I'm interested in. ChatGPT will talk me through it, and this is something I learn and want to note down. For the side project, I thought why not build something to automatically parse these transcripts and place them in an AI powered notes repo where I can continue this learning workflow of quizzing, repetition and elaboration?
+
+I can also think of possibilities where as I prepare for software engineering interviews or systems design questions, I can practice by having ChatGPT ask me questions in voice and I answer, then let ChatGPT evaluate.
