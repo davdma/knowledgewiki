@@ -1,6 +1,10 @@
 # KnowledgeWiki
 
-This repository is my personal **Knowledge Wiki**, a collection of notes and resources I’m curating to learn programming, tools, and AI-assisted workflows.  
+This repository is my personal **Knowledge Wiki**, a collection of notes and resources I’m curating to learn programming, tools, and AI-assisted workflows. It's fundamentally a LLM friendly markdown repository (for Claude Code to crawl) with a Docusaurus front end. If you wish to poke around, check out the deployed website which I update frequently [here](https://davidma.me/knowledgewiki/).
+
+<p align="center">
+<img width="90%" alt="image" src="https://github.com/user-attachments/assets/3ab8d637-84ce-4644-8352-7f55c48ccd45" />
+</p>
 
 It serves multiple purposes:
 
