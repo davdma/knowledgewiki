@@ -22,7 +22,13 @@ Will print out something like:
 
 ### `du` Disk Usage
 
-One mistake I used to make is use `ls -lah` to see directory sizes, which always surprisingly small, until I realized it only displayed the size of the directory entry, not its contents. To see actual disk usage of an entire directory, use `du -sh` where `-s` summarizes and `-h` makes the size human readable.
+One mistake I used to make is use `ls -lah` to see directory sizes, which always surprisingly small, until I realized it only displayed the size of the directory entry, not its contents. To see actual disk usage of an entire directory, use `du -sh` where `-s` summarizes and `-h` makes the size human readable. Note that `du` without any arguments will evaluate the current `.` directory. The `du` command displays both directory and file sizes.
+
+:::info[Detail]
+
+By default, the `du` command will evaluate the disk usage of the argument directory and evaluate all of its subdirectories and files. If you do not want to see all the subdirectories and files, the `-s` flag displays only the sum total disk usage of the argument directory or file.
+
+:::
 
 ```bash
 # Show size of each subdirectory in current directory
@@ -37,4 +43,30 @@ du -sh * | sort -h
 
 ### `df` Disk Free
 
-The `df` command stands for "disk free" and reports the amount of available and consumed disk space on filesystems.
+While `du` tells you the size of files and directories, the `df` command stands for "disk free" and reports **the amount of available and used disk space on mounted filesystems**.
+
+```bash
+df -h # get human readable file system 
+```
+
+An example output looks like this:
+
+```bash
+Filesystem      Size  Used Avail Use% Mounted on
+none            3.9G     0  3.9G   0% /usr/lib/modules/6.6.87.2-microsoft-standard-WSL2
+none            3.9G  4.0K  3.9G   1% /mnt/wslg/
+C:\             476G  399G   77G  84% /mnt/c
+```
+## Execution
+
+### `source`
+
+### `exec`
+
+To restart the shell e.g. if you have just installed `conda`, use `exec`:
+
+```bash
+exec $SHELL
+```
+
+This replaces the current shell with a brand new instance. You can also get a similar effect by reloading configurations and refreshing settings using `source ~/.bashrc`.
