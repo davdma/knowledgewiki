@@ -2,8 +2,20 @@ import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
 
 # Programming
 
+## Locality of Behavior
+
 An interesting topic of discussion I came across online is whether the principles outlined in Uncle Bob's `Clean Code` book may have perversed the concept of good coding practice. One of Uncle Bob's rules that drew a lot of criticism is his strong emphasis on single responsibility (SRP), even going to lengths of suggesting all functions should be 4-6 lines long. Engineers and professors have rightfully pointed out this absurd emphasis on short isolated functions actually impedes maintainable code, because it is more difficult to keep say 40 functions in your head than a few very long functions.
 
 Ultimately, a good principle to follow is instead the <BlueHighlight> Locality of Behavior </BlueHighlight> principle, which states that <GreenHighlight>the behavior of a unit of code should be as obvious as possible to the programmer looking only at that unit of code</GreenHighlight>.
 
 > "The primary feature for easy maintenance is locality: locality is that characteristic of source code that enables a programmer to understand that source by looking at only a small portion of it." - Richard Gabriel
+
+## Lessons
+
+One of the lessons on maintainable code that I learnt (and regrettably so) is the importance of separating data loading I/O and data manipulation. In my Argonne flood mapping project, I made the mistake of encapsulating in one singular function **(many times!)** both the data loading logic (say reading data from some file) and certain operational logic on that data (say computing mean std). At first this seems attractive because it simplifies the codebase so you have all the logic in one place (cough cough locality). The problem later on however, is that this hinders **TDD** because you cannot easily test the data loading and computation separately. Consequently, it forces you to create a lot of messy ways to hand dummy data over to the function in order to evaluate it at test time. The rule here is that for proper testing, <GreenHighlight>**the input to the function should be createable** looking at it from the outside, so you do not need to create mocks. Keeping data retrieval and data manipulation as separate functions makes things much easier to test.</GreenHighlight>
+
+:::info[Key Idea]
+
+There are always opposing tensions when it comes to programming principles. Here there is the tension between locality principle and SRP for testing. Certainly in many cases you may not need to test a function, though it is great to make it testable. A good rule of thumb is **if you can't get it right in three tries, you need to test it**.
+
+:::

@@ -57,6 +57,168 @@ none            3.9G     0  3.9G   0% /usr/lib/modules/6.6.87.2-microsoft-standa
 none            3.9G  4.0K  3.9G   1% /mnt/wslg/
 C:\             476G  399G   77G  84% /mnt/c
 ```
+
+### `find` Find Files
+
+Often `find` is used to specifically look for files or directories. The command `find` can be used to search for a file by filename if you're not sure where you saved it:
+
+```bash
+find / -name "somefile.txt" 2>/dev/null
+# /home/dave/Documents/somefile.txt
+```
+
+For partial search use asterisks in the name, also use `iname` for case insensitive:
+
+```bash
+find / -iname "*foo*.txt" 2>/dev/null
+# can match the following:
+# /home/dave/Documents/foobar.txt
+# /home/dave/Documents/Foo.txt
+```
+
+<details>
+<summary>`name` vs. `iname`</summary>
+
+The `name` option matches filename by shell pattern (do not give it slashes as it only matches filename). The key difference with the counterpart `iname` is that `iname` makes the match case insensitive. The asterisk `*` works the same in both cases.
+</details>
+
+:::tip[Trick]
+
+Use `2>/dev/null` to silence permission errors - redirecting **stderr**. File descriptors `0` is **stdin**, `1` is **stdout, and `2` is **stderr**. So `2>` redirects **stderr** to `/dev/null` which is essentially a special device that discards everything (think of it as a black hole). Writing to it just throws it away.
+
+:::
+
+List contents of a directory with the `-ls` option:
+
+```bash
+find ~/Documents -ls
+```
+
+Find files by type: use `-type f` for regular file, `-type d` for directory.
+
+```bash
+find ~ -type f
+```
+
+This allows you to list directories in a filepath (which `ls` cannot do). You might want to limit the depth (because it is recursive) using the `-maxdepth` option:
+
+```bash
+find ~/Public/ -type d -maxdepth 1
+# there is also a -mindepth N option!
+```
+
+You'll often do this in your current directory:
+
+- `find . -type f` - find current directory files
+- `find . -type d` - find current directory subdirectories
+- `find . -type l` - find current directory symlinks
+
+Other common patterns with `find` involve filtering by sizes:
+
+- `find . -size +100M` - find files bigger than 100MB
+- `find . -size -10k` - find files smaller than 10KB
+
+Or filtering by owners:
+
+- `find . -user dave`
+- `find . -group staff`
+- `find . -perm 644`
+
+Combine conditions with AND (`-and`), OR (`-o`), Negation (`!`):
+
+```bash
+# OR
+find . -type f -name "*.log" -o -name "*.txt"
+# AND
+find . -type f -name "*.sh" -and -executable
+# NEGATE
+find . -type f ! -name "*.txt"
+
+```
+
+You can also perform actions on results via `-delete` and `-exec` for executing a command:
+
+```bash
+find . -name "*.txt" -exec rm {} +
+```
+
+### `tree` Directory Listing
+
+:::warning[Pitfall]
+
+`tree` is not a built-in command on bash, so you will need to do `sudo apt install tree`.
+
+:::
+
+The command recursively lists contents of **directories** in depth-indented, tree like format, providing **visual representation of directory structure**.
+
+Flags:
+- `-d` - list directories only
+- `-L` - limit depth so `-L 2` to limit 2 levels deep 
+
+Example:
+
+```bash
+tree
+```
+
+Gets you the following output (in your current working directory):
+
+```bash
+.
+├── 01-core-commands.mdx
+├── 02-shortcuts.mdx
+├── 03-cli-tools.mdx
+└── 04-scripting.mdx
+
+0 directories, 4 files
+```
+
+## File Management
+
+### `cp`, `mv`, `rm`, `touch`
+### `chmod`
+### `chown`
+### `ln`
+
+## Inspection
+
+### `cat`
+### `less`
+### `head`
+### `tail`
+### `file`
+### `stat`
+### `which`
+
+## Text Processing
+
+### `grep`
+### `awk`
+### `sed`
+### `cut`
+### `sort`
+### `uniq`
+### `wc`
+
+## Networking
+
+### `curl`
+### `wget`
+### `ping`
+### `netstat`
+### `ssh`
+### `scp`
+
+## System Monitoring
+
+### `ps`
+### `top`
+### `htop`
+### `kill`
+### `uptime`
+### `free`
+
 ## Execution
 
 ### `source`

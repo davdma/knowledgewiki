@@ -1,0 +1,82 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight'; 
+
+# Terminal Shortcuts
+
+To move fast in the bash terminal without reaching for mouse or arrow keys, it is important to learn **GNU readline** shortcuts. GNU readline is what allows for features such as tab completions or scrolling through history with arrow keys in the terminal! By default <GreenHighlight>GNU readline uses Emacs key bindings</GreenHighlight>which is why you see that mentioned in a lot of terminal shortcut cheatsheets.
+
+## Movement
+
+For horizontal movement, start with the following:
+
+- `Ctrl + A` moves to the **beginning** of the line
+- `Ctrl + E` moves to the **end** of the line
+
+For character movement:
+
+- `Ctrl + F` moves **forward** one character
+- `Ctrl + B` moves **back** one character
+
+For word level movement:
+
+- `Alt + F` moves **forward** to end of next word
+- `Alt + B` moves **back** to the start of the current or previous word
+
+:::tip[Trick]
+
+- Think `A` for **start** of alphabet, `E` for **end**.
+- Think `F` for forward, `B` for back.
+
+:::
+
+## Killing and Yanking
+
+In Emacs <BlueHighlight>killing</BlueHighlight> is synonymous with cutting, and <BlueHighlight>pasting</BlueHighlight> is synonymous with pasting. Killing something deletes it and sends it to clipboard for pasting.
+
+- `Ctrl + K` kill (cut) **forward** to end of line
+- `Ctrl + U` kill (cut) **backward** to start of line
+
+:::tip[Trick]
+
+Often when typing in passwords in the terminal, you mistype. Instead of pressing backspace and trying to delete the typed password to start over (where you don't even know how many characters you need to backspace), you can just delete it with `Ctrl + U`! Then retype your password.
+
+:::
+
+Kill word (very useful for deleting):
+
+- `Alt + D` kill (cut) **forward** to end of current word
+- `Ctrl + W` kill (cut) **backward** to the start of current word
+
+Once you'll killed, this adds it to the kill ring. You can yank (paste):
+
+- `Ctrl + Y` yank (paste) from kill ring
+
+If you want to paste something you've killed in the past, you can cycle through the kill ring history by doing `Ctrl + Y` and then `Alt + Y` multiple times to cycle through!
+- `Alt + Y` **after `Ctrl + Y`** to cycle through kill ring history
+
+:::note[Detail]
+
+The GNU readline kill ring is local to the process and not shared with other GNU readline instances or the system's clipboard. So you can't easily copy and paste it elsewhere.
+
+:::
+
+## Swap Words
+
+If your cursor is between two words, you can swap them with the command:
+
+- `Alt + T` swap words
+
+## Clear Screen
+
+- `Ctrl + L` clears the screen
+
+## Reverse Search
+
+One of the most useful shortcuts a person first learns is <BlueHighlight>reverse search</BlueHighlight> in history, using `Ctrl + R`. This can be much faster than hitting the up arrow as it is directly on the keyboard.
+
+- `Ctrl + R` search backward through history
+
+FYI with `fzf` shell integration `Ctrl + R` is even more powerful as it will display your command history. Then you can search for and paste the selected command from history onto command line.
+
+## Copying Terminal Output
+
+I struggled with figuring out how to copy terminal output to system clipboard (not the GNU Readline buffer) for the longest time. Turns out you just need to drag with your mouse over a selection on the terminal screen and release. It's automatically copied to your system clipboard and you can do `Ctrl + V`.

@@ -263,6 +263,8 @@ git reset <mode> <commit>
 `git reset` moves the HEAD, while `git restore` only modifies your working directory. This makes `git restore` safer.
 :::
 
+One interesting detail I recently learned about `git restore .` is that it resets the working tree to the index state. So the result is that any unstaged changes on tracked files are removed, but staged changes remain. It's easy to think of restoring the working directory as wiping all changes in the tracked files, but what's actually happening is that git takes the version of the file from the index and writes it over the file, thus it is only **unstaged changes** that are wiped.
+
 ## Viewing Differences
 
 A very useful command is `git diff` to look at what changes you have compared to a saved reference point. You have options between looking at changes between your working directory and index, index and commit (by default HEAD), or working directory and commit.

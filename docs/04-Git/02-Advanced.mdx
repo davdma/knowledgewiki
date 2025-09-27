@@ -216,7 +216,13 @@ git log origin/main..HEAD
 
 # See newly fetched changes
 git log feature..origin/feature
+```
 
+The range notation has a special meaning with diffs, that is to show the difference between commit `A` and commit `B`. So `git diff HEAD~4..HEAD~2` compares `HEAD~4` with `HEAD~2`. Think of `A..B` in this context not as ancestry aware but just comparing changes between the snapshots of `A` and `B`.
+
+You can also compare branches:
+
+```shell
 # Diff between branches
 git diff main..feature
 ```
@@ -232,6 +238,12 @@ git log main...feature
 :::info[Key Idea]
 Range notation works with most Git commands - `log`, `diff`, `cherry-pick`, etc.
 :::
+
+## Sparse Checkout
+
+In cases where your repo contains config template files that you pull and modify, you might not want git to track those changes and push them back up to the repository.
+
+The `git sparse-checkout` allows you to change the working tree from having all tracked files present to only a subset of those files. 
 
 ## Test Your Knowledge
 

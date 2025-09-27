@@ -1,0 +1,285 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Javascript
+
+## Variables
+
+`let` and `const` are both **block-scoped** meaning they are only defined within the block of code in the `if` statements or `for` blocks. `var` however has function scope or global scope.
+
+### `let` vs. `const`
+
+The key difference is in **mutability**. `let` declared variables can be reassigned values, whereas `const` declared variables cannot be reassigned after declaration. Note that if `const` is an array or object then the contents of the array or object can still be changed.
+
+By default it is preferred to use `const` unless you know you will need mutability and reassignment. This makes for safer, more maintainable code.
+
+## Scope
+
+Javascript has the following types of scope:
+
+- Global scope
+- Module scope
+- Function scope
+- Block scope
+
+A function creates a scope so that variables defined exclusively in the function cannot be accessed from outside the function.
+
+As emphasized before, blocks scope `let` and `const` but not `var` declarations.
+
+### Closures
+
+Here's an interesting case of something called <BlueHighlight>lexical scoping</BlueHighlight>:
+
+```jsx
+import { useRef } from 'react';
+
+export default function Counter() {
+  const ref = useRef(0);
+
+  function handleClick() {
+    ref.current = ref.current + 1;
+    alert('You clicked ' + ref.current + ' times!');
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Click me!
+    </button>
+  );
+}
+```
+
+While `handleClick` does not define its own local variables, it still has access to the variable `ref` defined in its parent function `Counter()`. This is an example of lexical scoping. <GreenHighlight>Nested functions have access to variables declared in their outer scope</GreenHighlight>.
+
+In essence the function `handleClick()` remembers the environment in which they were created. This is called a <BlueHighlight>closure</BlueHighlight> - a combination of function enclosed with references to its surrounding state or **lexical environment**. A closure basically gives the function access to its outer scope. In Javascript closures are created at function creation time.
+
+This makes for an interesting quirk where you would think this would throw an error:
+
+```jsx
+function makeFunc() {
+  const name = "Mozilla";
+  function displayName() {
+    console.log(name);
+  }
+  return displayName;
+}
+
+const myFunc = makeFunc();
+myFunc();
+```
+
+It's easy to think that the variable `name` only exists for the duration of `makeFunc`, but the returned `displayName` still works! This is directly due to **closure**. The instance of `displayName` maintains a reference to its lexical environment within which `name` exists. So `name` remains available for use even after `makeFunc` finished executing.
+
+There are more examples of how this can be used:
+
+```jsx
+function makeAdder(x) {
+  return function (y) {
+    return x + y;
+  };
+}
+
+const add5 = makeAdder(5);
+const add10 = makeAdder(10);
+
+console.log(add5(2)); // 7
+console.log(add10(2)); // 12
+```
+
+Why are closures so useful? <GreenHighlight>They allow you to bind data from a lexical environment with a function that can operate on that data.</GreenHighlight> This allows you to use closures where you might usually use an object with a single method (think OOP with object methods that operate on object properties).
+
+:::info[Key Idea]
+
+A function's lexical environment does not just include the scope of the parent function it is nested in. It includes all outer scopes in which it was defined, **not just the direct parent**.
+
+The lexical environment stores **references** to those variables and not their values, so if an outer-scoped variable changes later, the inner function will see the updated variable in its lexical environment.
+:::
+
+## Destructuring
+
+<BlueHighlight>Destructuring</BlueHighlight> in javascript allows for easy shortcut to extract values from objects or arrays into variables.
+
+### Object Destructuring
+
+With object destructuring, **order does not matter** as it matches by property name. If you have an object say:
+
+```js
+const user = { name: "dave", age: 25, city: "bellevue"}
+```
+
+Then you can destructure via:
+
+```js
+const { name, age } = user;
+```
+
+Now you have the `const` variables `name` and `age` with the corresponding values.
+
+Object destructuring can even happen in the function arguments:
+
+```js
+// no destructuring
+function ToolPanel(props) {
+  const isSessionActive = props.isSessionActive;
+  const sendClientEvent = props.sendClientEvent;
+  const events = props.events;
+}
+
+// object destructuring
+function ToolPanel({ isSessionActive, sendClientEvent, events, }) {
+}
+```
+
+Some other interesting syntax for object destructuring is the following:
+
+```js
+
+const obj = { a: 1, b: { c: 2 } };
+const {
+  a,
+  b: { c: d },
+} = obj;
+// Two variables are bound: `a` and `d`
+
+```
+
+In which case `b: {c: d}` tells javascript to look in `b` then `c` to bind local variable `d`. `b` and `c` are just paths here. Consequently only `a` and `d` get bound.
+
+### Array Destructuring
+
+Array destructuring uses slightly different syntax, where **order matters**.
+
+```js
+const arr = [1, 2, 3];
+const [a, b, c] = arr; // a = 1, b = 2, c = 3
+```
+
+## `?.` Optional Chaining Operator
+
+The `?.` optional chaining operator allows you to access properties or methods of objects without throwing anerror if that property or method is `null` or `undefined`. For instance:
+
+```js
+
+const user = null;
+console.log(user?.name); // undefined, no error thrown
+
+```
+
+Does not throw an error because `user?.name` returns undefined. You can further chain these operators:
+
+```js
+
+console.log(user?.profile?.name); // Dave or undefined
+
+```
+
+There is a short circuiting mechanism where if any `?.` along the chain gets `null` or `undefined` it stops and returns `undefined`.
+
+## `??` Nullish Coalescing Operator
+
+The `??` operator is for providing a default value when the left hand side is `null` or `undefined`:
+
+```js
+
+const name = null;
+const displayName = name ?? 'Dave'; // defaults to Dave
+console.log(displayName);
+
+```
+
+You can also set defaults with `||` that is more broad than `??` as it any broad **falsy** value like `0` or `false` as failing the condition:
+
+```js
+
+const count = 0;
+const total = count || 10; // 10
+
+```
+
+## `FormData` Object
+
+`FormData` is a **built-in javascript object** that makes it easy to build and send key-value pairs to APIs. It can be thought of as a special type of map or dictionary for form fields, just like a HTML `<form>` would submit them.
+
+```js
+
+const formData = FormData();
+formData.append("username", "dave");
+formData.append("age", 24);
+
+```
+
+You can also create a `FormData` object from a HTML form element in the DOM:
+
+```js
+
+const formElem = document.getElementById("myForm");
+const formData = new FormData(formElem);
+
+```
+
+How is `FormData` different from a plain javascript object? With specialized methods like `append` and `get`, it allows for sending files or binary data **by encoding and serializing the data to `multipart/form-data`**. This encoding format is <GreenHighlight>defined by the HTTP standard</GreenHighlight> and is used for submitting forms with files or binary data. Thus it mimics browser form submissions, which we can't do ourselves with just some simple JSON submission.
+
+### Methods
+
+- `append(name, value, filename)` - if key already exists will add the new value to existing set of values (key can have multiple values)
+- `set(name, value, filename)` - overwrites existing values if key exists
+
+## `.json()`
+
+Often you will see in web applications the syntax `response.json()`. This is a function call on a `Response` object from the **Fetch API**. When you call `fetch(...)` you get a response object which you can do `.text()` to get the body as a string, or `.json()` to parse the body as JSON or `.blob()` to get the binary data. So `response.json()` stores the parsed JSON object. 
+
+In **Express.js** you will also see a `res.json(data)`, but this is a method form a different API, which sends back the data to the client as JSON.
+
+## `addEventListener`
+
+The `addEventListener` function is part of the browser's DOM API, and lets you listen for specific events on a DOM element (e.g. clicks, key presses, mouse movement) and run a callback when the event occurs. The basic syntax is `element.addEventListener(eventType, callback)`.
+
+For example,
+
+```js
+
+const button = document.getElementById("myBtn");
+button.addEventListener("click", () => {
+    alert("Button Clicked!");
+})
+
+```
+
+Or,
+
+```js
+
+// Listen for server events
+dc.addEventListener("message", (e) => {
+    const event = JSON.parse(e.data);
+    console.log(event);
+});
+
+```
+
+:::note[Detail]
+
+How do you know what string is valid for the `eventType` argument? It is by DOM element, so `button`, `window` might support `"click"`, `"keydown"` or `"resize"` while for a `socket` you have `"open"`, `"message"` as valid events. A `"message"` event is fired when the socket receives a message from the server. Hence, each type of object you're attaching event listeners to has its **event reference** or set of supported events.
+
+:::
+
+## `setTimeout`
+
+`setTimeout(fn, delay)` is a browser or Node function that schedules `fn` to run once after `delay` milliseconds.
+
+For example,
+
+```js
+
+setTimeout(() => console.log("hello"), 100);
+
+```
+
+## `crypto.randomUUID()`
+
+The Javascript Web API provides the built-in method `crypto.randomUUID()` to generate a unique 36 character identifier string like so:
+
+```js
+const id = crypto.randomUUID();
+console.log(id); 
+// Example output: "3c9d4e3d-812b-4c0a-9f0f-59f7d2e21a7a"
+```

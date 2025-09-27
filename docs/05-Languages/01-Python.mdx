@@ -252,3 +252,21 @@ The `PYTHONPATH` is an environment variable commonly set <GreenHighlight>to tell
 export PYTHONPATH=/home/user/myproject
 
 ```
+
+## `matplotlib.pyplot`
+
+### Transformations
+
+There are multiple coordinate systems in `matplotlib`:
+
+- data coordinate system (`ax.transData`)
+- axes coordinate system (`ax.transAxes`)
+- subfigure coordinate system (`subfigure.transSubfigure`)
+- figure coordinate system (`fig.transFigure`)
+- display coordinate system (`None` or `IdentityTransform()`)
+
+These `Transform objects` are naive to source and destination coordinate systems - <GreenHighlight>they take inputs in their coordinate system and transform the input to the **display** coordinate system</GreenHighlight>. Thus display coordinate system is `None` as the input is already in display coordinates.
+
+Transformations can invert themselves with `Transform.inverted` in order to generate a transform from the output coord system (display) to the input coord system. For example, `ax.transData.inverted()` transforms display to data coordinates.
+
+Transforms are important because they specify what coordinate system you are using, and map it to the display.

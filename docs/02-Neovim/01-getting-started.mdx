@@ -72,6 +72,24 @@ When you delete with `dd`, the deleted text isn't just removed - it's automatica
 
 You can also combine yanking with number prefixes for efficiency: `3yy` yanks 3 lines starting from the current line, `5yw` yanks 5 words forward.
 
+### Core Concepts: Registers and Buffers
+
+Understanding <BlueHighlight>registers</BlueHighlight> and <BlueHighlight>buffers</BlueHighlight> is essential for effective Neovim usage:
+
+**<BlueHighlight>Registers</BlueHighlight>** are temporary storage locations for text that you copy, cut, or delete. When you yank (`y`) or delete (`d`) text, it goes into a register. You can then paste it elsewhere using `p`. Vim has multiple registers (named with letters, numbers, and symbols) so you can store multiple pieces of text simultaneously.
+
+**<BlueHighlight>Buffers</BlueHighlight>** are in-memory representations of files you're editing. When you open a file in Neovim, it loads the file's contents into a buffer. You can have multiple buffers open at once, each containing a different file. Buffers are what you actually edit - changes are made to the buffer until you save (`:w`) to write back to the file.
+
+:::note[Detail]
+The key difference is purpose: registers store copied/cut text snippets for pasting, while buffers hold entire file contents for editing. They work together but serve completely different functions in your editing workflow.
+:::
+
+### Pasting from System Clipboard
+
+Many times I find myself needing to copy terminal output and paste it into my markdown file in neovim. To do this, copy terminal output by selecting the text with cursor and releasing (no need to `Ctrl + C` or `Ctrl + Shift + C` which does not work). Then in neovim, press `"+`, followed by `p`. **Note that `+` is a key press here!**.
+
+The **quote key** `"` allows you to <GreenHighlight>switch registers</GreenHighlight>. So the form is `"{register}` for the register of choice for the next delete yank or put. The `+` key in the above case is the system clipboard.
+
 ## Dot command
 
 The `.` command is powerful in vim because it simply repeats the last change command (all change commands except `u`, redo and `:` commands). For example, if you want to change a word to `joe` multiple times, you can do `cwjoe<Esc>` then `.` as many times as you want. The dot command is also handy as it is much less tedious than counting. For instance, if you wanted to delete some consecutive words in a line you can count them and then do `d7w` but it is much smoother to just do `dw......` and skip the counting.
@@ -127,25 +145,19 @@ Split faster using abbreviations `:sp` for horizontal split and `:vsp` for verti
 
 You can also open a window on a new file using `:new` and then saving it with filename using `:saveas move.c`.
 
-## Core Concepts: Registers and Buffers
-
-Understanding <BlueHighlight>registers</BlueHighlight> and <BlueHighlight>buffers</BlueHighlight> is essential for effective Neovim usage:
-
-**<BlueHighlight>Registers</BlueHighlight>** are temporary storage locations for text that you copy, cut, or delete. When you yank (`y`) or delete (`d`) text, it goes into a register. You can then paste it elsewhere using `p`. Vim has multiple registers (named with letters, numbers, and symbols) so you can store multiple pieces of text simultaneously.
-
-**<BlueHighlight>Buffers</BlueHighlight>** are in-memory representations of files you're editing. When you open a file in Neovim, it loads the file's contents into a buffer. You can have multiple buffers open at once, each containing a different file. Buffers are what you actually edit - changes are made to the buffer until you save (`:w`) to write back to the file.
-
-:::note[Detail]
-The key difference is purpose: registers store copied/cut text snippets for pasting, while buffers hold entire file contents for editing. They work together but serve completely different functions in your editing workflow.
-:::
-
 ## Toggling Case
 
 Use `~` to toggle the case of a cursor character or selection. Use `gU` for uppercasing, `gu` for lowercasing.
 
 ## Indentation
 
-So far I am figuring out my indentation by using `V` to select lines and `=` on the selection to auto-indent.
+So far I am figuring out my indentation by using `V` to select lines and `=` on the selection to auto-indent. To tab, select lines with `V` and then `>` or `<` to indent or unindent. Note: for unknown reasons you may have to press `>` or `<` twice sometimes.
+
+:::tip[Trick]
+
+It can be really annoying if the default tab is 4 spaces when the file you are working on is 2 spaces. To solve this, use the quick local setting: `:setlocal tabstop=2 shiftwidth=2 expandtab`.
+
+:::
 
 ## Resources
 

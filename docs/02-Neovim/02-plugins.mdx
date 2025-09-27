@@ -92,3 +92,24 @@ Examples:
 - saaW" - [S]urround [A]dd [A]round [W]ord ["]quotes
 - sd'   - [S]urround [D]elete [']quotes
 - sr)'  - [S]urround [R]eplace [)] [']
+
+## Diff View Plugin
+
+To quickly bring up modified files in a diff split, and review changes in a git repo, use `diffview.nvim` plugin.
+
+For starters, `:DiffviewOpen` can open diff views with a variety of arguments. Examples are `:DiffviewOpen HEAD~4..HEAD~2` or `:DiffviewOpen d4a7b0d` for a specific commit diff. With no arguments, it simply compares against the current index. To close, type `:DiffviewClose`. To understand the range notation meaning with diffs, see [range notation](../04-Git/02-Advanced.mdx#range-notation).
+
+The `:DiffviewFileHistory` command also allows you to see diff view with a `git log` commit history window below where you can select specific commit file diffs.
+
+:::tip[Trick]
+
+To avoid cluttering the interface with untracked changes, make sure to pass the argument `:DiffviewOpen -uno`.
+
+:::
+
+As convenience, I added the following keymaps:
+- `<leader>dw` - working tree vs. `HEAD` (with `-uno` flag)
+- `<leader>dp` - diff to previous commit `HEAD^`
+- `<leader>df` - diff history of current file
+- `<leader>dF` - diff history across the entire repo
+- `<leader>dq` - close diff view

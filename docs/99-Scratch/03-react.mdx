@@ -1,0 +1,212 @@
+import { BlueHighlight, Greenlight } from '@site/src/components/Highlight';
+
+# React
+
+## What is React for?
+
+React is used for building UI with <BlueHighlight>components</BlueHighlight>. As such, React apps are made up of lots of components. These are pieces of UI that have their own logic and appearance, from buttons to whole pages.
+
+For example, a component might be:
+
+```js
+function MyButton() {
+    return (
+        <button>I'm a button</button>
+    )
+}
+```
+
+Then you can nest it into another component:
+
+```js
+export default function MyApp() {
+    return (
+        <div>
+            <h1>Welcome to my app</h1>
+            <MyButton />
+        </div>
+    )
+}
+```
+
+:::note[Detail]
+
+The `export default` specifies the main component in the file.
+
+:::
+
+A react component can be identified by names that start with capital letters, such as `<MyButton />`.
+
+Most React projects use `jsx` which allows for HTML-like code inside javascript.
+
+## Hooks
+
+<BlueHighlight>React hooks</BlueHighlight> lets you "hook into" React's state and lifecycle features. The reason why this is necessary is because originally with functional components e.g. `function Component() {}` they were stateless, and couldn't remember values across renders. This was as opposed to class components where you could do `this.state`, but it caused lots of boiler plate code with constructors etc. With React hooks you could use functional components and keep track of state throughout.
+
+## `useState`
+
+`useState` is a **React hook**. You use it at the top of the component to declare a state variable. It specifically returns an array with two variables, one is the state variable, the other is a setter function.
+
+:::note[Detail]
+
+Since `useState` is a hook, you can only call it at the top level of your component, not inside loops or components.
+
+:::
+
+Commonly you will see:
+
+```js
+const [state, setState] = useState(initialState)
+```
+
+The value of `state` gets set initially to `initialState`. Then later the `set` function lets you update the variable and trigger a re-render.
+
+## `useEffect`
+
+`useEffect` takes two arguments, a `setup` function and an optional `dependencies` argument. The `dependencies` are reactive arguments, and React will compare the dependencies with their previous values - if the dependencies change, React will re-render and run the `setup` functions with the new values.
+
+## `useRef`
+
+`useRef` is a React hook to reference a value that's not needed for rendering. It's a mutable object that React keeps the same across renders. You call it at the top level of component to declare a ref. `useRef` returns an object with a singular property `current` set to `initialValue` which is mutable. On next renders `useRef` returns the same object.
+
+```js
+// { current: ... }
+const ref = useRef(initialValue);
+console.log(ref.current); // access the value
+ref.current = newValue; // update the value
+
+```
+
+As opposed to `state` from `useState`, updating the `current` property does not trigger a re-render.
+
+When to use refs:
+1. Accessing DOM elements
+2. Store values that do not trigger re-render
+3. Keep previous values
+4. Avoid object recreation
+
+### Accessing DOM Elements
+
+For example:
+```jsx
+function Example() {
+  const divRef = useRef(null);
+
+  return <div ref={divRef}>Hello</div>;
+}
+```
+
+Here `divRef` starts as `{ current: null }` but when rendered React creates the `<div>` and sees the `ref={divRef}` argument, and assigns the DOM element to the `.current` property. As a result you can call DOM methods on the `ref`: `divRef.current.focus()`.
+
+<details>
+<summary>DOM Elements</summary>
+
+The <BlueHighlight>DOM</BlueHighlight> (Document Object Model) is a **tree-like representation** of the webpage that is built from HTML. Every element in the DOM becomes a javascript object inside the tree, which expose properties like `id`, `className`, `innerText` and methods like `.focus()`, `.click()` and `.appendChild()`. 
+
+</details>
+
+### Referencing a Value
+
+Example:
+
+```jsx
+
+import { useRef } from 'react';
+
+export default function Counter() {
+  const ref = useRef(0);
+
+  function handleClick() {
+    ref.current = ref.current + 1;
+    alert('You clicked ' + ref.current + ' times!');
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Click me!
+    </button>
+  );
+}
+
+```
+
+On each re-render `useRef(0)` returns the same ref object as guaranteed by React.
+
+### `useState` vs `useRef`
+
+:::info[Key Idea]
+
+`useState` is good for when the value should cause a re-render if it changes, `useRef` is good when the value should persist across renders but not directly cause a re-render.
+
+:::
+
+## `JSON.stringify`
+
+Built in javascript method to convert object or array into a JSON string (aka serialization). This is commonly used to prepare javascript data to be sent to a server.
+
+## Passing Props
+
+React components communicate with each other using <BlueHighlight>props</BlueHighlight> (this is shorthand for **properties**). Every parent component can pass info to child components with props. In React, props can be thought at a high level as <GreenHighlight>inputs to a component</GreenHighlight>.
+
+Props are simply info you pass to a JSX tag. For instance with `<img className="avatar" src="..." alt="Lin Lanying" />`, you are passing props `className`, `src`, `alt` to `<img>`.
+
+Let's pass props from parent to child component:
+
+```jsx
+
+export default function Profile() {
+  return (
+    <Avatar
+      person={{ name: 'Lin Lanying', imageId: '1bX5QH6' }}
+      size={100}
+    />
+  );
+}
+
+function Avatar({ person, size }) {
+  // child component reads props
+  // person and size are available here
+}
+
+```
+
+:::info[Key Idea]
+
+In React **props are the only argument to your component**. What's really happening is this, which is valid code:
+
+```jsx
+
+function Avatar(props) {
+  let person = props.person;
+  let size = props.size;
+  // ...
+}
+
+```
+
+But many cases you don't need the whole `props` argument, so you destructure it into `Avatar({ person, size })`.
+
+:::
+
+## Synthetic Event Handlers
+
+Instead of `addEventListener` in components (see [here](../05-Languages/03-Javascript.mdx#addeventlistener)), React provides <BlueHighlight>synthetic event handlers</BlueHighlight> like such:
+
+```jsx
+
+export default function Button() {
+  function handleClick() {
+    alert('You clicked me!');
+  }
+
+  return (
+    <button onClick={handleClick}>
+      Click me
+    </button>
+  );
+}
+
+
+```
+
+The `handleClick` function is an event handler that is **passed as a prop** to `<button>`. Event handler props generally start with `on` followed by capital letter.
