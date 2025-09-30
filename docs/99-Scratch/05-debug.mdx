@@ -1,0 +1,21 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Debugging
+
+A collection of issues I've consistently encountered over time, and the fixes for them.
+
+## Exit code `137`
+
+Usually indicates some sort of Out-Of-Memory (OOM) error. Was the case on my HPC job when my `np.load` was allocating close to 100GB in memory and getting the process killed. The tricky thing here is that due to being killed there is very little in terms of execution trace for debugging.
+
+## `channel 3: open failed`
+
+While working with Jupyter Notebooks on HPC clusters, I've gotten this confusing message many times after a kernel dies. I start seeing annoying lines consistently printed to my ssh terminal reading:
+
+```channel 3: open failed: connect failed: Connection refused```
+
+Without any other information, it can be hard to know how to get this error to stop printing, which can clutter the terminal.
+
+Recently I learned what is happening is that Jupyter notebooks in VSCode in order to work must connect to **Jupyer servers**,aka a Python process running `jupyter notebook` or `jupyter lab`. If you run locally, VSCode starts a local server in the background. In HPC environments, you do this by pasting in the remote Jupyter server URL you get from running `jupyter lab --no-browser --port=8866` to VSCode e.g. `http://localhost:8866/?token=abcd`. VScode will save the URL to a **remote server list** so it can quickly reconnect. However, if the URL becomes stale, VSCode does not know that and will continue attempting to connect, resulting in the error.
+
+The easy fix is to open up the command palette `Ctrl + Shift + P` and click the option `Jupyter: Clear Remote Server List`.

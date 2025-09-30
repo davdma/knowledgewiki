@@ -181,7 +181,57 @@ Here is a slice of the large list of available codecs you get by running `ffmpeg
 
 ## Strong vs. Weak Scaling
 
-Strong scaling is changing the resources, weak scaling keeps the resources the same while altering the 
+When it comes to scalability on HPCs, there are two important concepts with regards to how computational capacity scales.
+
+<BlueHighlight>Strong scaling</BlueHighlight> is the speedup that can be achieved <GreenHighlight>through increasing the processor resources while the **problem size stays constant**</GreenHighlight>, and is bound by [Amdahl's Law](./04-terms.mdx#amdahls-law) to the portion of code that is not parallelizable.
+
+<BlueHighlight>Weak scaling</BlueHighlight> is the speedup that can be achieved by <GreenHighlight>increasing both number of processors and **increasing the problem size**</GreenHighlight>. The difference here is that by scaling the problem size, i.e. more processors with a constant workload per processor, we can solve larger problems on a large machine that we cannot achieve as fast on a smaller machine. The limit here is only processors and maximum problem size. An example of weak scaling is increasing the batch size (or problem size) for ML experiments.
+
+Just as Amdahl's law governs strong scaling, <BlueHighlight>Gustafson's Law</BlueHighlight> governs weak scaling. The law assumes the parallel part of a problem scales linearly with resources while the serial part does not increase as problem size increases. The law claims that,
+
+$$
+\text{Scaled speedup} = s + p \times N
+$$
+
+Where $s$ is proportion of time spend on serial execution, $p$ is proportion execution time on part that can be parallelized, and $N$ the number of processors. Think of it as the ratio of time to solve a larger problem (i.e. scaled by $N$) on a serial computation relative to having $N$ processors.
+
+Hence, the law claims that scaled speedup increases linearly with respect to number of processors with no upper limit.
+
+:::info[Key Idea]
+
+In practice, you are often not limited to a set task size. Thus, the sizes of problems scale with number of resources.
+
+By nature if you have a data parallel problem where processors can work on its own set of data separately, this will scale weakly. 
+
+:::
+
+:::tip[Trick]
+
+Measure strong scaling on HPC by testing how overall computational time of a job scales with resources (threads or MPI processes).
+
+Measure weak scaling on HPC by testing computational time of a job while increasing both job size and resources. This would have resources on x axis and **scaled speedup** on y axis.
+
+:::
+
+### Scaling Variables
+
+<BlueHighlight>Speedup</BlueHighlight> for strong scaling is **time using one processor divided by time using N processors**:
+
+$$
+\text{Speedup} = \frac{t_1}{t_N}
+$$
+
+Where $t_1$ is the execution time on one processor, $t_N$ is the execution time on $N$ processors.
+
+<BlueHighlight>Efficiency</BlueHighlight> is **ideal time divided by measured time**:
+
+$$
+\text{Efficiency} = \frac{\text{Ideal Time}}{\text{Measured Time}} \cdot 100
+$$
+
+With weak scaling, the efficiency is the ratio of time to complete 1 unit of work with 1 processor relative to N work units with N processors.
+
+Read more [here](https://www.kth.se/blogs/pdc/2018/11/scalability-strong-and-weak-scaling/).
 
 ## The Bitter Lesson
 

@@ -1,0 +1,18 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Topics
+
+## Stacked Diffs
+
+<BlueHighlight>Stacked diffs</BlueHighlight> refer to a common version control workflow where instead of large PRs, you have smaller groups of changes one after another which can be code reviewed and approved independently. This helps improve efficiency over being blocked on large PR reviews, and monolithic changes.
+
+It aims to solve the problem when developers write large PRs sequentially (non-independent), one depending on the other. This requires a lot of waiting while the prior PR undergoes review. With stacked diffs, you make smaller changes which you commit as a **diff** (small PR) and then create another diff, and another. Each diff is reviewed and approved, but you can move on to the next diff instead of waiting on reviews. Breaking large PRs down to smaller diffs also help with the review process.
+
+![stacked diff](/img/stackeddiffs.jpg)
+
+When prior diffs require changes, the later diffs will need to be rebased. Thus interactive rebasing is a big component of a stacked diff workflow
+
+Additional notes:
+- Stacked diffs are often supported by specific tooling like `git-stack`, `Phabricator` and more to help manage its complexity.
+- Diffs can either depend on prior diffs or be independent. Independent diffs can be reviewed and approved, but dependent ones still need to wait for their prerequisites to merge before they ultimately are merged.
+- Stacked diffs typically will use **rebase-and-merge** (just typical rebase + merge fast forward pattern) rather than merge commits to maintain linear history.

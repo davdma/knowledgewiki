@@ -58,6 +58,12 @@ none            3.9G  4.0K  3.9G   1% /mnt/wslg/
 C:\             476G  399G   77G  84% /mnt/c
 ```
 
+Another common use case is checking the **shared memory**:
+
+```bash
+df -h /dev/shm
+```
+
 ### `find` Find Files
 
 Often `find` is used to specifically look for files or directories. The command `find` can be used to search for a file by filename if you're not sure where you saved it:
@@ -140,6 +146,12 @@ You can also perform actions on results via `-delete` and `-exec` for executing 
 
 ```bash
 find . -name "*.txt" -exec rm {} +
+```
+
+As an example of how I used `find`, recently my error output identified some directory with problematic files. Since it did not print the exact filepath, I just used `find` to locate it:
+
+```bash
+find data/imagery -type d -name "20160311_464_837"
 ```
 
 ### `tree` Directory Listing
