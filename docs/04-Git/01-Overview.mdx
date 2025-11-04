@@ -428,7 +428,10 @@ git commit -a
 
 # Interactive adding for selective commits
 git add -i
-git add --patch  # For partial file changes
+
+# For partial file changes - stage hunks interactively
+git add --patch
+git add -p         # short hand
 
 # Rebase instead of merge on pull
 git pull --rebase

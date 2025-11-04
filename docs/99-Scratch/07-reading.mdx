@@ -1,0 +1,23 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight'
+
+# Reading
+
+Articles and snippets that I've found interesting.
+
+## [Language & Coding Creativity](https://www.amacad.org/publication/daedalus/language-coding-creativity)
+
+The article dives into the implications of NLP on the future of humans and machines. It has a great summary of the change in paradigm from supervised to unsupervised learning around 2018 with the advent of Generative Pretrained Transformers (GPTs):
+
+> On the surface, it may be difficult to see the difference between these models and more narrow or specific AI models. Historically, most AI models were trained through supervised machine learning, which means humans labeled data sets to teach the algorithm to understand patterns. Each of these models would be developed for a specific task, such as translating or suggesting grammar. Every model could only be used for that specific task and could not be repurposed even for seemingly similar applications. As a result, there would be as many models as there were tasks.
+
+> Transformer machine learning models change this paradigm of specific models for specific tasks to a general model that can adapt to a wide array of tasks. In 2017, researchers Alec Radford, Rafal Jozefowicz, and Ilya Sutskever identified this opportunity while studying next character prediction, in the context of Amazon reviews, using an older neural network architecture called the LSTM. It became clear that good next character prediction leads to the neural network discovering the sentiment neuron, without having been explicitly told to do so. This finding hinted that a neural network with good enough next character or word prediction capabilities should have developed an understanding of language.
+
+It hints at an emergent property through next token prediction evidenced by the emergence of an ability to conduct sentiment analysis with a "sentiment neuron" that contains most of the sentiment signal. Simply predicting the next character of Amazon reviews resulted in discovering the idea of sentiment. A thesis is that <GreenHighlight>this is a general property of certain large neural networks trained to predict next step or dimension in inputs</GreenHighlight>. More info on this specific experiment can be found [here](https://openai.com/index/unsupervised-sentiment-neuron/).
+
+<GreenHighlight>Good quality representations can be learned through unsupervised learning algorithms that can then be used to train on tasks with fewer examples</GreenHighlight>.
+
+Mira Murati also identifies this as a clue that we need multimodal approaches to teach machines language and its relation to the broader environment. One big turning point was the release of <GreenHighlight>**DALL-E** which was a 12 billion parameter GPT-3 trained to generate images from text descriptions through dataset of text to image pairs.</GreenHighlight>
+
+I also noticed her prescient remarks on the limitations of GPT models due to the fundamental nature of their training sets. The models pick up bias from data sets and training, and being able to tackle out of distribution problems and tasks is a challenge. It echoes similar thoughts from Andrej Karpathy. She writes:
+
+> GPT-3 is built to be dynamic and require little data to perform a task, but the system’s experience will color its future work. This experience will always have holes and missing pieces. Like human beings, machines take inputs and generate outputs. And like humans, the output of a machine reflects its data sets and training, just as a student’s output reflects the lessons of their textbook and teacher. Without guidance, the system will start to show blind spots, the same way a mind focused on a single task can become rigid compared with a mind performing many tasks and gathering a wide variety of information. In AI, this phenomenon is broadly known as bias, and it has consequences.

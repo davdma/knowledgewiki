@@ -6,6 +6,10 @@ Here I list core commands (e.g. `ps`, `du`, `find`) grouped by functionality for
 
 ## Navigation and Filesystem
 
+### `ls` List Directory
+
+Useful flags include `-F` for adding `/` to the names of directories, `-a` for printing all files and directories including hidden ones, `-l` gives long listing format with file permissions, user, group etc.
+
 ### `pwd` Print Working Dir
 
 `pwd` prints the absolute filepath of the current working directory.
@@ -34,7 +38,7 @@ By default, the `du` command will evaluate the disk usage of the argument direct
 # Show size of each subdirectory in current directory
 du -sh *
 
-# Show size of a specific directory (and its subdirectories)
+# Show size of a specific directory
 du -sh path/to/dir
 
 # Show a sorted list of the biggest directories/files
@@ -142,11 +146,33 @@ find . -type f ! -name "*.txt"
 
 ```
 
-You can also perform actions on results via `-delete` and `-exec` for executing a command:
+A common use case is to find files matching a pattern and delete them all. This can be done with `-delete`:
 
 ```bash
-find . -name "*.txt" -exec rm {} +
+find . -name "*.txt" -delete
 ```
+
+You can also perform actions on results via `-exec` for executing a command and `{}` where the filename would be passed in. For instance a longer way of deleting files is to call `rm` on each returned filename:
+
+```bash
+find . -name "*.txt" -exec rm '{}' \+
+```
+
+:::note[Detail]
+
+The apostrophe around the `{}` is just to protect the braces from shell script interpretation, and similarly the backslash as well for the ending `+`.
+
+For removing matched files, you might also see:
+
+```bash
+find . -name "*.txt" -exec rm '{}' \;
+```
+
+The difference is that `;` (escaped with backslash) calls one `rm` per file while `+` calls `rm` with batches of files together, which is usually faster.
+
+The string `{}` is replaced by the current filename everywhere it occurs in the arguments.
+
+:::
 
 As an example of how I used `find`, recently my error output identified some directory with problematic files. Since it did not print the exact filepath, I just used `find` to locate it:
 
@@ -189,9 +215,149 @@ Gets you the following output (in your current working directory):
 ## File Management
 
 ### `cp`, `mv`, `rm`, `touch`
-### `chmod`
-### `chown`
-### `ln`
+
+To copy a directory and its contents, use the `-r` flag:
+
+```bash
+
+cp -r /Users/david/docs/ /Users/david/projects/
+
+```
+
+Similarly to remove a directory and its contents, do:
+```bash
+
+rm -r dir/
+
+```
+### `chmod` Change File Mode
+
+For changing file or directory permissions.
+
+:::info[Key Idea]
+
+The permissions model is key in understanding how to manage file permissions.
+
+Each file or directory has:
+1. Owner (User)
+2. Group
+3. Others
+
+Each of these can have three types of permissions:
+- `r` - Read permission (view file / list directory)
+- `w` - Write permission (edit file / add or remove directory)
+- `x` - Execute permission (run file / enter directory)
+
+When you try to interact with a file, the system runs through a series of checks:
+1. Checks if you are user that owns the file. If so, you are granted the user owner's permission, and no further checks are done.
+2. If you are not user, checks group membership. If you belong to group that matches the group owner of the file, you are granted the group permission and no further checks are done.
+3. If neither user or owner, the others permission is granted.
+
+Clarifying note on executables:
+- Executables are usually binaries or commands, and need `x` permission to run
+- Scripts can be run without `x` by passing to an interpreter like `bash script.sh` or `python script.py`
+
+Clarifying notes on directory permissions:
+- With `r` on and `x` off you can do `ls` but you cannot `cat` a file or `cd` into the directory.
+- `r` - You can see names of entries in directory e.g. `ls`
+- `w` - You can modify contents of directory by adding, removing, or renaming files with `rm`, `mv`, `cp` or `touch`
+- `x` - You can **access** the entries (open or `cd` into them), access any nested directories
+- If you do not have write permission to a directory, and a file inside has write permission, you can modify the file contents but not move or rename it.
+
+With `ls -l` you will see `drwxr-xr-x` or `-rw-r--r--`. The first letter `d` means it is of type directory and `-` means a regular file.
+
+:::
+
+<details>
+<summary>What defines the groups?</summary>
+
+In Linux/Unix, **groups are just collections of users**, managed in `/etc/group`.
+- A user can belong to multiple groups
+- A group shares permissions among its users
+
+Create a group:
+```bash
+sudo groupadd hydrosm
+```
+
+Add a user to a group:
+```bash
+sudo usermod -aG hydrosm dma
+```
+
+See groups a user belongs to:
+```bash
+groups dma
+# dma : cels gce lcrc hydrosm generative_hydrology BiasCorrection
+```
+
+Change a file's group:
+```bash
+chown :hydrosm file.txt
+```
+</details>
+
+There are two ways to set permissions, one is in **symbolic mode** using `u`, `g`, `o`, or `a` like `chmod u+x file.txt`. The other is in **octal mode** with numbers like `chmod 644 <filename>`.
+
+With symbolic mode you have the form `[who] op permission [op permission ...]`. The `[who]` is the target of permission change and can consist of symbols where `u` represents the user, `g` group, `o` others and `a` all. The operator can either be `+` for turning on a permission, `-` turning off a permission, or `=` to turn on the specific permission and off all others (equal to ONLY that permission). The permission symbols are `r`, `w`, `x`, and some unique ones `s`, `t`.
+
+You can easily chain together symbols but it is important that you **separate the operators with commas**, for instance to add read but remove write permission to group and others, you can do:
+
+```bash
+chmod go+r,go-w file.txt
+chmod go+rw script.sh
+```
+
+Giving write permission to Others is unsafe - that means **any users on the system can change that file**.
+
+:::note[Detail]
+
+**Setuid `s`:**
+- Known as "set-user-id-on-execution" or "set-group-id-on-execution"
+- Sets the Effective User ID (EUID) of the user process that is executing a program to that of the file when it is run. Basically gives the executer **the owner's privileges when running that file**. The bit will be set in the user part: `rwsr-xr--`.
+- Setgid is when `s` is in the group bits: `rwxr-sr--` gives anyone running the executable **the group's privileges**. Even if Richard is not in group `hydrosm`, running the program makes it run as if it belonged to `hydrosm`.
+- **Setuid and setgid only applies to binary executables, so compiled programs like `/usr/bin/passwd`, not `sh` shell scripts.**
+
+```bash
+chmod g+s script.sh # run program as owner
+```
+
+**Sticky bit `t`:**
+The sticky bit only applies for directories. If the sticky bit is on, **only the owner can delete or rename files in the directory, even if the directory is writable**.
+
+For example for shared writeable directories like `/tmp` you might see `drwxrwxrwt` so users cannot delete other people's files.
+
+:::
+
+For instance, to turn on read, write, and execute permissions, while turning off setuid and sticky bit attributes, do:
+
+```bash
+chmod a=rwx file.txt
+```
+
+With octal notation, memorize `4 = read`, `2 = write`, and `1 = execute` and sum them for the octal digit for that particular target. 
+
+Most often you will see `chmod 755 <filename>` because it gives the most permissions to the owner, and only read and execute permissions for everyone else. That is, `rwxr-xr-x`.
+
+### `chown` Change File Owner/Group
+
+Change user and/or group ownership of a file. Each file has a owner and group which you can see when you do `ls -l`. This determines how the permission bits apply. If you are a user in the same group as the file group, you have those permissions with the file.
+
+The basic syntax:
+```bash
+chown [new owner][:new group] file
+```
+
+For example to set the owner and group to `dma` and `hydrosm`:
+```bash
+chown dma:hydrosm script.sh
+```
+
+You can use the flag `chown -R` to recursively change ownership on files and directories.
+
+### `ln` Hard or Sym Links
+
+Creates links to files. By default it makes hard links. For making symlinks, use `ln -s <TARGET> <LINKNAME>`.
 
 ## Inspection
 
@@ -213,6 +379,27 @@ Gets you the following output (in your current working directory):
 ### `uniq`
 ### `wc`
 
+The bash command `wc` is really useful for doing counting. It can count the number of lines, words, bytes in the input or a given file. Without options it prints all three: byte counts, word counts, and line counts.
+
+To limit to specific count, use flags:
+- `-l` to print only newline counts
+- `-w` to print only word counts
+- `-c` (short for `--chars`) to print only byte counts
+
+For file input instead of a pipe, pass in the filenames after the options.
+
+For instance, if you wanted to count the number of files in a folder matching a regex from `find`, you can pipe the output into `wc`:
+
+```bash
+find data/labels -type f -name "label_*.tif" | wc -l
+```
+
+For number of files in the current folder at depth 1:
+
+```bash
+find . -maxdepth 1 -type f | wc -l
+```
+
 ## Networking
 
 ### `curl`
@@ -224,18 +411,130 @@ Gets you the following output (in your current working directory):
 
 ## System Monitoring
 
-### `ps`
-### `top`
+### `ps` Process Snapshot
+
+The command `ps` displays information about a selection of active processes. For repetitive live updates of processes, use `top` (see below).
+
+:::info[Key Idea]
+
+PID (Process ID) = unique ID of running process, PPID (Parent Process ID) = the parent process that created the current process.
+
+:::
+
+By default `ps` selects processes with same Effective User ID (EUID) as user and corresponds with the same terminal session where invoked. Note that consequently this **is just a subset of the processes associated with your user**.
+
+Example: say you log back onto the login node and want to check back on the processes that you launched and make sure they were not killed. Use the `-U` flag to filter by Real User ID (RUID).
+
+```bash
+ps -U $USER
+```
+
+<details>
+<summary>RUID vs. EUID</summary>
+Real User ID (RUID): The user who **started the process**. If you are logged in as user `dma` on swing and run `script.py`, the process has your RUID. The shell you start has your RUID, and all processes launched from the shell inherit that RUID.
+
+Effective User ID (EUID): Determines what **permissions** the process has, e.g. a program may belong to a user but run with elevated EUID like `root`. If the EUID is your user, then it can only do what you can do. If the EUID is `root`, it can do pretty much anything.
+
+Every process has an **RUID** and **EUID**. The **RUID* tells the system who started the process, and the **EUID** tells the system what the process is allowed to do. <GreenHighlight>When a process tries to access a file, socket, or device, the kernel first checks its **EUID** against the file's permissions!</GreenHighlight>
+
+**RUID == EUID** means no privilege escalation, but higher EUID can allow for limited & controlled privilege escalation (see note).
+</details>
+
+:::note[Detail]
+
+When a binary has the **setuid** bit set in file permissions, e.g. `-rwsr-xr-x` (`s` instead of `x` in owners execute permission), when program runs, its EUID is set to the file owner instead of the user who ran it.
+
+Thus `/bin/ping` which is owned by `root` and has the setuid bit when run by a usercan open raw sockets (something only `root` has access to).
+
+:::
+
+Other important flags to know as a developer:
+
+For filtering, use:
+- `-p <pid>` to filter for a specific PID
+- `-C <command>` to filter by command name e.g. `ps -C python` for python processes
+- `--ppid <pid>` to show processes with matching parent PID good for debugging forked daemons or processes
+
+For more info, use:
+- `-f` for **full format** which includes the command args to the process
+- `-F` for **extra full format**
+
+A power user formatting is to use `-o` which can enable you to show additional usage info. By default, `-f` and `-F` do not show cpu usage and memory usage:
+
+```bash
+ps -U $USER -o pid,ppid,cmd,%cpu,%mem --sort=-%cpu
+```
+
+For BSD style printout, use `aux` (`a` = all users, `u` = show user, `x` = include processes without controlling terminal). You often will see this in the form of `ps aux | grep <name>`.
+
+To see processes in tree view for parent/child relationships, use `-ejH`.
+
+### `top` Interactive Process Snapshot
+
+:::info[Key Idea]
+
+Compared to `ps`, `top` is more interactive and displays info continuously (as opposed to `ps` that just prints out a single snapshot). Think of this more like a task manager program on CPU and memory usage.
+
+:::
+
+`top` also helps you see which processes are most active as it ranks them by processor usage.
+
 ### `htop`
 ### `kill`
 ### `uptime`
-### `free`
+### `free` System Memory
+
+This is a useful debug command for checking memory. The command displays the amount of free and used memory in the system.
+
+```bash
+free -h
+```
+
+Example output:
+```
+               total        used        free      shared  buff/cache   available
+Mem:           1.0Ti        26Gi       973Gi        60Mi       7.4Gi       976Gi
+Swap:             0B          0B          0B
+```
+
+The `shared` column includes `tmpfs` such as `/dev/shm` shared between processes. The `buff/cache` column is memory used for filesystem buffers or cache (speeds up disk I/O by caching files in RAM). For what actual memory you have free, look at `available` column.
 
 ## Execution
 
-### `source`
+### `sudo` Superuser Do
 
-### `exec`
+A binary program that can be invoked to run a command as another user (by default `root`). Many operations that require root privileges (installing packages, editing system configs) mean that you need to temporarily elevate privileges with `sudo` in order to run them.
+
+Commmonly you might see:
+
+```bash
+sudo apt install python3-pip # run apt package installer with root privileges
+sudo nano /etc/nginx/nginx.conf # edit system config
+```
+
+:::danger[Do Not Forget]
+
+Only give sudo access to trusted users as it gives full control over the system. Be careful with recursive deletes like `sudo rm -rf /`.
+
+:::
+
+### `source` Execute in Current Shell
+
+The source command <GreenHighlight>runs a script in the current shell</GreenHighlight> instead of launching a new shell. Usually running a script in bash spawns a new child process and runs the script in that new environment, meaning once it exits, any variables or environment variables in the script are lost. With `source` any variables, functions, or PATH changes stay active after the script finishes, hence it is often used for environment setup.
+
+```bash
+source filename
+```
+
+You can also use its abbreviation which is `.`:
+
+```bash
+. filename
+```
+
+What is happening when you do `source activate myenv` is that the `activate` script modifies the `PATH` or `PYTHONPATH` variable, so `source` ensures those exports happen **in the current shell.**
+
+### `exec` Execute Program
 
 To restart the shell e.g. if you have just installed `conda`, use `exec`:
 
@@ -244,3 +543,31 @@ exec $SHELL
 ```
 
 This replaces the current shell with a brand new instance. You can also get a similar effect by reloading configurations and refreshing settings using `source ~/.bashrc`.
+
+:::note[Detail]
+
+What is the environment variable `$SHELL`? It stores the **shell path**. If you do `echo $SHELL` you get `/bin/bash`, so `exec $SHELL` executes the shell program specified by `/bin/bash` as a new program, replacing the old program.
+
+:::
+
+## Others
+
+### `test` Evaluate Conditional
+
+The built-in `test` command evaluates a conditional expression.
+
+You can use this a variety of ways, for instance, to compare two numbers:
+
+```bash
+test 18 -gt 2 && echo yes
+# yes
+```
+
+A short hand for `test` is to use the brackets `[]` syntax:
+```bash
+[ 18 -gt 2 ] && echo yes
+# yes
+```
+
+The `[]` is more portable but `[[]]` is preferred on modern systems as it handles expressions that evaluate to null automatically.
+

@@ -1,0 +1,70 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Geospatial Analytics
+
+## Datums
+
+A datum is a 3D smooth ellipsoid model of the Earth. The two most common datums are the **North American Datum (NAD83)** and **the World Geodetic System (WGS84)**. WGS84 is used by GPS worldwide while NAD83 is used in the US. 
+
+With a datum established you can use lat-lon coordinates to specify real world locations.
+
+:::info[Key Idea]
+
+Datum vs. Projection vs. CRS:
+- Datum is mathematical model of the Earth
+- Projection transforms 3D onto 2D map (e.g. Mercator projection which preserves direction, distorts area)
+- CRS ties together datum and projection (or just datum if no projection used like WGS84 geographic coordinate system)
+
+Dumbed down way to think of it as CRS = datum + projection (optional).
+
+Examples:
+- EPSG:4326 - WGS84 datum, unprojected geographic coordinates (lat/lon)
+- EPSG:3857 - WGS84 datum, Web Mercator projection
+
+:::
+
+## CRS
+
+The **datum** and **projection** are components of a CRS.
+
+We use **map projections** to flatten the 3D shape of the Earth into a 2D shape. Depending on scale and use case, some map projections are better than others. You might have projections that preserve angular conformity (so North and East are always 90 degrees), or projections that preserves uniform distance.
+
+A <BlueHighlight>Coordinate Reference System</BlueHighlight> as a whole defines **how the coordinates relates to real locations on Earth**. Given CRS, every place on Earth can be specified with a set of three numbers or **coordinates**. CRS can be split into two classes: **geographic coordinate reference systems** and **projected coordinate reference systems**.
+
+### Geographic CRS
+
+Geographic CRS uses degrees latitude and longitude to describe location. Popular example is **WGS 84**.
+
+Features:
+- Lines of latitude run parallel to equator
+- Latitude in 180 equally spaced horizontal sections
+- Lines of longitude run perpendicular, converge at poles
+- Only at equator is distance of line of longitude equivalent to latitude
+
+In geographic CRS, degrees are divided into **minutes** and **seconds**.
+
+### Projected CRS
+
+A projected CRS lies on the XY plane, so locations are identified with x, y coordinates on a grid.
+
+:::tip[Trick]
+
+With projected CRS think XY or rectangular coordinates!
+
+:::
+
+An example of a projected CRS is the <BlueHighlight>Universal Transverse Mercator (UTM)</BlueHighlight> CRS, which assigns plane coordinates to locations on the Earth's surface. As a projected CRS, it has its origin at the equator at a specific longitude.
+
+The UTM CRS is a global map projection. To minimize distortion, the world is divided into **60 UTM zones** 6 degrees wide in longitude from East to West. <GreenHighlight>Each zone is projected to a plane as a basis for its coordinates</GreenHighlight>. Each UTM zones point of origin is the intersection of the equator and the zone's **central meridian** (longitude that runs through **center** of the UTM zone).
+
+A position on Earth is given by the UTM zone number (e.g. 32), the hemisphere designator (N or S) and the Easting (X) or meters to the East and Northing (Y) or meters to the North. The Easting and Northing serve as <GreenHighlight>planar coordinate values in meters in that zone</GreenHighlight>. In each zone, the UTM Easting coordinates are with respect to the central meridian of the zone (assigned an arbitrary value of 500,000m so the Easting value can never be negative). The UTM northing coordinates are measured from zero at the equator in a Northerly direction for UTM coordinates north of equator. For UTM northing coordinates south of equator, the equator is assigned a Northing value of 10,000,000m to avoid negative numbers. See the scheme of one UTM zone below:
+
+![utmcrs](/img/utmcrs.png)
+
+For example, in UTM zone 16 one meter east of the central meridian is 500,001m Easting.
+
+## Reflectance
+
+Satellites such as Sentinel-2 collect <BlueHighlight>reflectance data</BlueHighlight>. Reflectance is the proportion of light a satellite sensor measures that is reflected from the Earth's surface or atmosphere. Different materials have different reflectance properties. Bright surfaces like snow or clouds have high reflectance while shadows and dark surfaces have low reflectance. Top Of Atmosphere (TOA) reflectance is calculated using contributions from clouds and aerosols.
+
+Reflectance specifically is the ratio of reflected light to incident light, often expressed as a percentage.

@@ -8,6 +8,12 @@ A collection of issues I've consistently encountered over time, and the fixes fo
 
 Usually indicates some sort of Out-Of-Memory (OOM) error. Was the case on my HPC job when my `np.load` was allocating close to 100GB in memory and getting the process killed. The tricky thing here is that due to being killed there is very little in terms of execution trace for debugging.
 
+On the Swing cluster, while total node memory might be alrge ~1TB, job memory is allocated based on fraction of cores. So requesting `ncpus=32` only gets 120GB. You can check with:
+
+```bash
+qstat -f $PBS_JOBID | grep mem
+```
+
 ## `channel 3: open failed`
 
 While working with Jupyter Notebooks on HPC clusters, I've gotten this confusing message many times after a kernel dies. I start seeing annoying lines consistently printed to my ssh terminal reading:
@@ -19,3 +25,15 @@ Without any other information, it can be hard to know how to get this error to s
 Recently I learned what is happening is that Jupyter notebooks in VSCode in order to work must connect to **Jupyer servers**,aka a Python process running `jupyter notebook` or `jupyter lab`. If you run locally, VSCode starts a local server in the background. In HPC environments, you do this by pasting in the remote Jupyter server URL you get from running `jupyter lab --no-browser --port=8866` to VSCode e.g. `http://localhost:8866/?token=abcd`. VScode will save the URL to a **remote server list** so it can quickly reconnect. However, if the URL becomes stale, VSCode does not know that and will continue attempting to connect, resulting in the error.
 
 The easy fix is to open up the command palette `Ctrl + Shift + P` and click the option `Jupyter: Clear Remote Server List`.
+
+## `$PATH` Altered
+
+When certain commands like `qsub` or `qstat` suddenly stop working because they cannot be found, the likely culprit is an altered `$PATH` environment variable. The `$PATH` is a list of directories where the system looks for executable programs when you type a command. For example, if you type `ls` the system look at `$PATH` and find it inside of `/usr/bin`.
+
+Check by running `echo $PATH`. Specifically for pbsnodes commands, it probably came from `/opt/pbs/bin` being removed.
+
+In a clean shell on LCRC, my path list is:
+
+```txt
+PATH=/home/dma/miniconda3/bin:/home/dma/miniconda3/condabin:/usr/lpp/mmfs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/pbs/bin:/home/dma/.local/bin:/home/dma/bin
+```

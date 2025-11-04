@@ -253,6 +253,34 @@ export PYTHONPATH=/home/user/myproject
 
 ```
 
+## Closures
+
+A <BlueHighlight>closure</BlueHighlight> happens with a function defined inside another function. The inner function grabs the outer variables defined in its enclosing lexical scope and remembers them even when the function is executed outside of that scope - the combination of a function and its enclosing scope is a closure. This is common in functional programming languages and is the case in Javascript as well.
+
+For instance, if you returned this inner function, it still remembers the variable `name` in its surrounding scope.
+```bash
+def outer_func():
+    name = "Pythonista"
+    def inner_func():
+        print(f"Hello {name}")
+
+    return inner_func
+
+greeter = outer_func()
+greeter()
+# Hello, Pythonista
+```
+
+## Parallelization
+
+There are different ways to parallelize: `multiprocessing`, `concurrent.futures`. You have `ThreadPoolExecutor` and `ProcessPoolExecutor`.
+
+Important distinction is whether the task is I/O bound or CPU bound. If it is I/O bound the recommendation is to use `ThreadPoolExecutor` and threads that share memory.
+
+### Global Interpreter Lock (GIL)
+
+Fill here...
+
 ## `matplotlib.pyplot`
 
 ### Transformations
