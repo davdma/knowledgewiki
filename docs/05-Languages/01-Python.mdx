@@ -2,6 +2,43 @@ import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
 
 # Python
 
+## `zip()`
+
+A very useful utility function in Python is `zip()` which takes any number of iterables, and <GreenHighlight>combines the iterables into one **iterator** of tuples</GreenHighlight>. Once the shortest iterable is exhausted the iterator terminates (hence the iterables do not have to be the same length everywhere).
+
+```python
+# Example from my flood mapping project
+channels = [True, False, True, True, True]
+channel_names = ["red", "green", "blue", "nir", "swir"]
+
+for item in zip(channels, channel_names):
+    print(item)
+
+# (True, "red")
+# (False, "green")
+# (True, "blue")
+# ...
+```
+
+To unzip a list of tuples, the inverse of the `zip()` operation is `zip(*iterable)`, which returns the original groups as tuples:
+
+```python
+zipped_list = [(1, "one"), (2, "two"), (3, "three")]
+
+nums, words = zip(*zipped_list)
+print(nums)
+# (1, 2, 3)
+print(words)
+# ("one", "two", "three")
+```
+
+A more pythonic and less error free (since `zip(*iterable)` cannot handle an empty list) just use list comprehension:
+
+```python
+lst1 = [x[0] for x in zipped_list]
+lst2 = [x[1] for x in zipped_list]
+```
+
 ## Class Attributes
 
 As opposed to instance attributes, class attributes are shared across all instances of a class:

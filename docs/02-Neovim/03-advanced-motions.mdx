@@ -11,6 +11,12 @@ With the standard operator-motion the command acts on the specific cursor positi
 
 To change a whole sentence regardless of cursor position, you use `cis`. The change operator acts on the text object `is` which stands for "inner sentence". This is not be confused with changing the entire line - if you have multiple sentences on one line, it only acts on the sentence you are on. If you have another sentence after the one you delete and you do not want a whitespace there you may consider using `as`. The text object `as` stands for "a sentence" which compared to `is` includes the white space after the sentence.
 
+:::info[Key Idea]
+
+Combine any operators like `y` yank, `c` change, `v` select etc. (say `ya{`) with text objects to be able to operate on chunks of text more quickly. For instance if your cursor is within a word, `viw` easily selects the whole word.
+
+:::
+
 The key difference between `a` and `i` is more nuanced than just whitespace:
 
 - **`i` (inner)**: The text object itself, excluding delimiters/boundaries
@@ -47,6 +53,27 @@ There are a long list of text objects. The ones to get familiar with for now are
 - `{` or `}` / `a{` / `i{` - curly braces
 - `<` or `>` / `a<` / `i<` - angle brackets
 
+:::tip[Trick]
+
+A fast way to get to the bottom or top of a large function or list far outside your viewing window is simply to do `vi{` or `vi[` to select around the list or function (which puts you at the bottom) and then to just escape the selection.
+
+```python
+lst = [
+    "orange",
+    "doorhinge",
+    "apple",
+    "grapple",
+    ... # imagine your cursor is in the middle of a long list
+    "words",
+    "more words",
+    "long list",
+    "hello",
+    "hey" # <-- vi[ sends your cursor right here
+]
+```
+
+:::
+
 ### Word vs WORD (w vs W)
 
 <GreenHighlight>The distinction between lowercase "w" and uppercase "W" is crucial for practical editing.</GreenHighlight>
@@ -74,6 +101,15 @@ Use **capital W text objects** when working with filenames, URLs, email addresse
 Many beginners get frustrated trying to delete filenames or URLs with `daw` - remember to use `daW` for complete non-whitespace sequences!
 :::
 
+### Text Object Motions
+
+Instead of slowly moving horizontally by word with `w` you can move by sentences or paragraphs via **text object motions**:
+
+- `(` moves sentences backward
+- `)` moves sentences forward
+- `{` moves paragraphs backward
+- `}` moves paragraphs forward
+
 ## Visual Mode
 
 With text objects, now you can select whole sentences or lines inside parenthesis without needing to do a lot of cursor moving and combos! For example, to select all the arguments in the function parenthesis, just type `vi(`:
@@ -86,6 +122,14 @@ def baz(arg1, arg2, arg3, arg4):
 Then you can just either delete it with `d` or use `c` change operator to delete it and start modifying in insert mode! If you are not within a parenthesis or bracket, `vi{` or `vi(` will just jump you to the next one in the line, which is actually a neat feature. You can also use `yi{` to yank something inside a bracket, then `vaw` to select a word, and then `p` to paste over that word. As you can see, you can combine text objects with visual mode selection to do a lot of actions.
 
 The capital `V` is actually also powerful for dealing with selection linewise as opposed to character-wise with `v`. For instance, if you wanted to select the entire file contents, `ggvG` will only select up to the start of the last line, because it operates by character. The solution is `ggVG` which selects all lines in the file! Or if you want to grab all 4 lines below `V4j` is much better than `v4j$`.
+
+Another powerful key for Visual Mode is the `o` key for jumping the cursor between top and bottom of selection while still keeping the selection.
+
+:::tip[Trick]
+
+Jump with `o` to the start of your selection while keeping the current selection alive. This allows you to increase the selection boundary at the top rather than just at the bottom. You can press `o` repeatedly to toggle between the top and bottom of your selection.
+
+:::
 
 ## Other Motion Patterns
 
@@ -130,6 +174,32 @@ Use `t` motions when you want to preserve the target character (like commas in p
 After using `f`, `F`, `t`, or `T`, you can repeat the motion with `;` (forward) or `,` (backward).
 :::
 
+### `%` Jump to Matching
+
+Jump between matching parentheses `()`, `[]`, `{}` with the `%` key.
+
+A common pattern in fast vim motions is to find the matching parenthesis. While you can use text objects to select around parentheses, you might want to be more flexible and for example select everything before a parenthesis, then add on all the chunks up to and including the closing parenthesis.
+
+For example, to select and delete an entire function, you might position your cursor at the first line and do `Vf{%d` which first selects up to the first bracket, then uses `%` to increase the selection to the closing bracket before deleting.
+
+```js
+function new_fn(bar: number) {
+    const item = newItem({
+        ...data
+    });
+    ...
+}
+```
+
+### Toggle Jump List
+
+A <BlueHighlight>jump</BlueHighlight> is defined as any command that moves the cursor several lines away. Examples of jump commands: `G`, `/`, `?`, `n`, `N`,
+`%`, `(`, `)`, `[[`, `]]`, `{`, `}`, `:s`.
+
+You will often want to go back to places your previously jumped your cursor. Smoothly move through history of cursor positions using `Ctrl+o` and `Ctrl+i`.
+
+Mashing `Ctrl+o` takes you through previous cursor jumps. To reverse this operation and jump forward through cursor positions do `Ctrl+i`. You can see your jump list with `:ju`. Clear the jump list with `:cle` as the maximum entries is 100.
+
 ### Practical Workflow Examples
 
 These patterns become powerful when chained together:
@@ -173,7 +243,7 @@ I also found a fun [game](https://vim-adventures.com/) you can play that makes y
         "Delete and append word",
         "Delete the entire word regardless of cursor position, including trailing whitespace"
       ],
-      answer: 1
+      answer: 3
     },
     {
       question: "What is the key difference between `aw` and `iw`?",

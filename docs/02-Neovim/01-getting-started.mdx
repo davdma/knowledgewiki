@@ -151,7 +151,16 @@ Use `~` to toggle the case of a cursor character or selection. Use `gU` for uppe
 
 ## Indentation
 
-So far I am figuring out my indentation by using `V` to select lines and `=` on the selection to auto-indent. To tab, select lines with `V` and then `>` or `<` to indent or unindent. Note: for unknown reasons you may have to press `>` or `<` twice sometimes.
+So far I am figuring out my indentation by using `V` to select lines and `=` on the selection to auto-indent (`=` does a [cindent](https://neovim.io/doc/user/options.html#'cindent')). You can even auto-indent an entire paragraph with `=ap` (see [text objects](03-advanced-motions.mdx#text-objects)).
+
+```js
+// You can do =ap on this entire section to fix the indents
+    const item = {
+    ...data
+            }
+```
+
+To tab, select lines with `V` and then `>` or `<` to indent or unindent. Note: for unknown reasons you may have to press `>` or `<` twice sometimes.
 
 :::tip[Trick]
 
