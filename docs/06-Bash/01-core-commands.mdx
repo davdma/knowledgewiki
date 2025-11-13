@@ -361,23 +361,254 @@ Creates links to files. By default it makes hard links. For making symlinks, use
 
 ## Inspection
 
-### `cat`
-### `less`
-### `head`
-### `tail`
-### `file`
-### `stat`
-### `which`
+### `echo` Print String
+
+`echo` is one of the most essential built in bash commands, printing text or variable values. It prints each of its arguments to stdout separated by a single space and terminated with newline.
+
+Examples:
+
+```bash
+# Use it to redirect output to file
+echo "export PATH=$PATH:/usr/local/bin" >> ~/.bashrc
+```
+
+By default it does not interpret backslash escapes, so if you want the newline to be printed, you have to use the `-e` flag.
+
+```bash
+echo -e "This is the first line\nThis is the second line"
+# This is the first line
+# This is the second line
+```
+
+### `cat` Concatenate
+
+The purpose of the `cat` command is to concatenate files and print the result to standard output. <GreenHighlight>Most people use it just to print contents of a file to stdout</GreenHighlight>, for example:
+
+```bash
+cat document.txt
+```
+
+But you can concatenate and save, or append one file to another:
+
+```bash
+# concat and save to one file
+cat document1.txt document2.txt document3.txt > combined.txt
+
+# append one file to another
+cat document1.txt >> document2.txt
+```
+
+:::note[Detail]
+
+Some useful `cat` flags of note:
+
+- `cat -n file.txt` numbers output lines
+- `cat -s file.txt` squeezes multiple blank lines into one
+
+:::
+
+### `less` Viewing Files
+
+`less` is for viewing text files efficiently, great for quick inspection of large files. As opposed to text editors like vim, `less` does not load the entire input file when called, but displays the content one page at a time.
+
+:::info[Key Idea]
+
+The `less` viewer can come in handy with massive logs, outputs, or CSVs that you do not want to load into memory at once.
+
+:::
+
+For basic navigation in the `less` viewer, commands are similar to `vi`:
+
+- Spacebar scrolls forward 1 page
+- `b` scrolls backward 1 page
+- `d` scrolls forward half page
+- `u` scrolls backward half page
+- Enter or down arrow scrolls forward 1 line
+- Up arrow scrolls backward 1 line
+- `g` to the top of the file
+- `G` to the bottom of the file (and `123G` to go to line 123)
+- `/` to search forward for a pattern
+- `?` to search backward for a pattern
+- `q` or `:q` to quit
+
+### `head` First Lines
+
+The `head` command is good for inspecting the beginning of a file, by outputting the first 10 lines to stdout:
+
+```bash
+head document.txt
+```
+
+You can specify any arbitrary number of lines from the begging with `-n` flag:
+
+```bash
+# print first 30 lines instead
+head -n 30 document.txt
+```
+
+You can also give it multiple files at one time.
+
+### `tail` Last Lines
+
+Similar to `head`, the `tail` command outputs the last 10 lines of a file to stdout. Can adjust the number with `-n`.
+
+### `file` File Type
+
+The `file` tool attempts to determine what type of file it is given, whether it is a text file, an executable file or data file. It also determines the type of language found within the file.
+
+```bash
+file 02-interactivity.md
+# 02-interactivity.md: Java source, ASCII text, with very long lines (428)
+```
+
+### `stat` File Status
+
+Print information regarding the file.
+
+```bash
+stat 01-intro.md
+File: 01-intro.md
+#   Size: 5927            Blocks: 16         IO Block: 4096   regular file
+# Device: 830h/2096d      Inode: 19990       Links: 1
+# Access: (0644/-rw-r--r--)  Uid: ( 1000/ davidma)   Gid: ( 1000/ davidma)
+# Access: 2025-11-10 15:01:47.671001592 -0800
+# Modify: 2025-09-27 11:32:23.329669113 -0700
+# Change: 2025-09-27 11:32:23.329669113 -0700
+#  Birth: 2025-09-27 11:32:23.329669113 -0700
+```
+
+:::note[Detail]
+
+The `file` command uses the `stat` system call to examine file types.
+
+**Execute (search)** permission is required along all directories in the given file path for `stat` to access the file.
+
+:::
+
+### `which` Command Path
+
+Tells you where an executable lives on your system.
+
+For example,
+
+```bash
+which cat
+# /usr/bin/cat
+```
+
+This means that whenever you run `cat` the shell actually executes the program `/usr/bin/cat`.
+
+:::info[Key Idea]
+
+`which` only looks inside the directories specified by your `$PATH` environment variable. If a program is not in your `PATH`, `which` will not find it.
+
+:::
 
 ## Text Processing
 
-### `grep`
+### `grep` Print Matching Lines
+
+The `grep` command searches for patterns and prints out each line that matches the pattern. There are multiple modalities of where it looks for matches.
+
+If files are provided, looks in each provided file. If no file is provided, the `-r` recursive search looks at working directory, while without the `-r` it looks at stdin. To explicitly read stdin as a file, you can specify the file as `-` (though this is not necessary if you just want `grep` a pipe).
+
+For instance:
+
+```bash
+qstat dma | grep dma
+```
+
+If you want to count the number of matching lines (instead of passing to a `wc -l`, use the `-c` flag. You can also treat the pattern as a **fixed string** instead of regex using `-F`.
+
+```bash
+grep -c "Dave" file.txt
+# 17
+```
+
+:::note[Detail]
+
+The point of `-` in place of a file name:
+
+You can <GreenHighlight>read both from stdin and other files simultaneously</GreenHighlight> (stdin is just treated as one of many files).
+
+```bash
+# reads both the piped file.txt and document.txt
+cat file.txt | grep "pattern" - document.txt
+```
+
+:::
+
+:::note[Detail]
+
+Regex review:
+- `\w` for letters, `\d` for digits
+- `|` acts as an OR between options
+- `( )` allows grouping, e.g. for OR modifier, with quantifiers, etc..
+- `[ ]` matches a character from a list or range of contained options
+- `[^ ]` matches a character NOT in a list or range of contained options
+- `^` at the start of a regex means match at start of line
+- `$` at the end of a regex means match at end of line
+- `.` is the match-all (any single character) wildcard
+- `?` quantifies previous character or group as occurring zero or one time
+- `*` quantifies previous character or group as occurring zero or more times
+- `+` quantifies previous character or group as occurring one or more times
+- `{n,m}` quantifies previous character or group as occurring between n and m times
+- Quantifiers are greedy- will always match longest possible fit.
+
+:::
+
+A very useful flag is `-o` to make `grep` only print out the matches rather than the entire lines containing the matches.
+
+```bash
+echo "Dave, Door\nDash, Moon, Dave" | grep -o "Dave"
+# Dave
+# Dave
+```
+
+<details>
+<summary>Basic vs. Extended Regex</summary>
+
+With basic regex, the special characters `?`, `+`, `|`, `(`, `)`, `{`, `}` are just treated as ordinary characters. To use them you must escape with backlash `\?`, `\+`. Besides this, basic regex still works with all the regex syntax.
+
+For example: `\w{3}` in extended regex is `\w\{3\}` in basic regex.
+
+In short, certain special characters lose meaning in basic regex if not prefixed with backslash, whereas in extended regex, characters are special unless they are prefixed with backslash. Hence, if you anticipate using lots of these special characters, prefer extended regex.
+
+[Reference](https://www.gnu.org/software/grep/manual/html_node/Basic-vs-Extended.html)
+
+</details>
+
+`grep` by default uses basic regular expressions (BRE) but can support extended regular expressions (ERE). If you want use extended regex patterns you must **enable extended regex** mode with `-E` flag:
+
+```bash
+echo "Dave, Door, Dash, Moon, Dark" | grep -o "D\w{3}"
+# Dave
+# Door
+# Dash
+# Dark
+```
+
+### `fgrep` Fast Grep
+
+`fgrep` is essentially a variant of `grep` for fixed strings, when you do not need to use fancy regex expressions. Hence `fgrep` performs much faster than `grep` for matching multiple strings. Another reason to use `fgrep` is if you are searching for a string with many special or metacharacters, and you don't want to put tons of backslashes in the pattern - `fgrep` merely treats them as literals.
+
+**Matching a single pattern with `fgrep` is not significantly faster than grep.**
+
 ### `awk`
+
+The `awk` command executes programs written in the **awk** programming language specialized for text manipulation. <GreenHighlight>An awk program is a sequence of patterns and corresponding actions if those patterns are matched</GreenHighlight>.
+
 ### `sed`
 ### `cut`
-### `sort`
-### `uniq`
-### `wc`
+### `sort` Sort Lines
+
+Use `sort` to sort lines of text files.
+
+### `uniq` Repeated Lines
+
+The `uniq` command filters out matching lines adjacent to each other. By default sequential matching lines are merged to the first occurrence. **NOTE: it does not detect repeated lines unless they are adjacent!** Either sort the input first or use `sort -u` without `uniq`.
+
+### `wc` Count
 
 The bash command `wc` is really useful for doing counting. It can count the number of lines, words, bytes in the input or a given file. Without options it prints all three: byte counts, word counts, and line counts.
 
@@ -469,7 +700,7 @@ For BSD style printout, use `aux` (`a` = all users, `u` = show user, `x` = inclu
 
 To see processes in tree view for parent/child relationships, use `-ejH`.
 
-### `top` Interactive Process Snapshot
+### `top` Interactive Process Viewer
 
 :::info[Key Idea]
 
@@ -479,9 +710,57 @@ Compared to `ps`, `top` is more interactive and displays info continuously (as o
 
 `top` also helps you see which processes are most active as it ranks them by processor usage.
 
-### `htop`
-### `kill`
-### `uptime`
+![topscreenshot](/img/top.png)
+
+### `htop` Enhanced Interactive Process Viewer
+
+Similar to `top` but allows scrolling vertically and horizontally and you can interact using a mouse.
+
+You can observe all processes running on the system, along with their command line args, view them in tree format, select multiple processes and act on them all at once. <GreenHighlight>Hence you can act on processes (killing etc.) without entering their PIDs</GreenHighlight>.
+
+![htopscreenshot](/img/htop.png)
+
+### `kill` Terminate Process
+
+The `kill` command sends a specified signal to a specified process or group of processes.
+
+With no specified signal, `TERM` signal is the default signal, meant to terminate the process (preferred over the `KILL` signal as `TERM` **allows the process handler to perform clean up before terminating**).
+
+```bash
+# Sends SIGTERM
+kill pid
+```
+
+If the `TERM` signal does not terminate the process, a `KILL` signal can be sent via
+
+```bash
+# both send SIGKILL
+kill -KILL pid
+kill -9 pid
+```
+
+### `uptime` System Status
+
+Prints one line display of the current time, how long the system has been running, how many users are logged on, and the system load averages over the past 1, 5, 10 mins. The load averages are the average number of processes in a runnable (using or waiting for CPU) or uninterruptable state (waiting for I/O).
+
+:::note[Detail]
+
+A load average of 1 on a single CPU system means it is completely loaded the entire time, while on 4 CPU system means only 25% load, 75% idle.
+
+:::
+
+```bash
+uptime
+#  18:14:49 up 1 day,  7:51,  2 users,  load average: 0.26, 0.15, 0.10
+```
+
+In pretty format with `-p`:
+
+```bash
+uptime -p
+# up 1 day, 7 hours, 51 minutes
+```
+
 ### `free` System Memory
 
 This is a useful debug command for checking memory. The command displays the amount of free and used memory in the system.
@@ -549,6 +828,51 @@ This replaces the current shell with a brand new instance. You can also get a si
 What is the environment variable `$SHELL`? It stores the **shell path**. If you do `echo $SHELL` you get `/bin/bash`, so `exec $SHELL` executes the shell program specified by `/bin/bash` as a new program, replacing the old program.
 
 :::
+
+### `xargs` Execute from Stdin
+
+An essential bash command, `xargs` reads items from stdin and executes a provided command with initial arguments followed by the items read in as arguments.
+
+Commands like `find`, `cat`, `grep` pipe files and strings through stdin, but commands like `rm`, `cp`, `mv`, `git` expect arguments, not piped input. Hence `xargs` <GreenHighlight>bridges the gap between them by converting piped stdin into arguments for subsequent command</GreenHighlight>.
+
+Thus, you can do something like:
+
+```bash
+# delete all log files
+find . -name "*.log" | xargs rm
+```
+
+Which converts the files found by `find` into an `rm file1.log file2.log ...` call.
+
+The `-n` flag specifies the **max arguments per command** so `-n 1` will run the command 10 times for 10 arguments.
+
+```bash
+# NOTE: xargs by default runs echo command
+echo "a b c" | xargs -n 1
+# a
+# b
+# c
+```
+
+A common thing you will also see is the `-I {}` placeholder syntax to insert items at specific points instead of the default behavior of appending all args to the end. For instance:
+
+```bash
+echo "a b c" | xargs echo file:
+# file: a b c
+echo "a b c" | xargs -n 1 -I {} echo file: {}
+# file: a
+# file: b
+# file: c
+```
+
+### `nohup` No Hang Up
+
+Invokes a command immune to hang ups, i.e. it will ignore the `SIGHUP` signal. By default outputs are routed to `nohup.out`. The structure is `nohup utility [args...]`:
+
+```bash
+# Run the python script in the background, ignore hang up signal
+nohup python train_models.py &
+```
 
 ## Others
 
