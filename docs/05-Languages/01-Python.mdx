@@ -2,6 +2,43 @@ import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
 
 # Python
 
+## The Interpreter
+
+The Python bytecode interpreter e.g. what is installed on `/usr/local/bin/Python3.13` can read and execute commands interactively or read and execute Python scripts.
+
+**How does Python code run?**
+
+First the python code is compiled into bytecode and stored as `.pyc` files in `__pycache__`. An example might be:
+
+```python
+print("Hello")
+```
+
+Compiles to
+
+```txt
+LOAD_NAME     0 (print)
+LOAD_CONST    0 ('hello')
+CALL_FUNCTION 1
+POP_TOP
+LOAD_CONST    1 (None)
+RETURN_VALUE
+```
+
+The Python interpreter program consists of a loop (bytecode evaluation loop) that iterates over bytecode instructions, fetching one bytecode instruction at a time. It decodes the bytecode instruction, and executes the corresponding C function. This is also referred to as the <BlueHighlight>CEval loop</BlueHighlight>.
+
+:::info[Key Idea]
+
+The flow of execution for CPython is:
+
+source code -> bytecode -> interpreter loop execution
+
+**Each bytecode instruction maps to a function in `ceval.c`.**
+
+:::
+
+A very useful source from Python docs: [the bytecode interpreter](https://github.com/python/cpython/blob/main/InternalDocs/interpreter.md).
+
 ## `zip()`
 
 A very useful utility function in Python is `zip()` which takes any number of iterables, and <GreenHighlight>combines the iterables into one **iterator** of tuples</GreenHighlight>. Once the shortest iterable is exhausted the iterator terminates (hence the iterables do not have to be the same length everywhere).
@@ -38,6 +75,12 @@ A more pythonic and less error free (since `zip(*iterable)` cannot handle an emp
 lst1 = [x[0] for x in zipped_list]
 lst2 = [x[1] for x in zipped_list]
 ```
+
+## `map()`
+
+The function takes the form `map(function, iterable, strict=True)` and returns **an iterator that applies the function** to every element of the input iterable.
+
+Multiple iterables can also be provided, in which case the function must take as many arguments and applies to the iterables in parallel. If `strict=True` then if one of the multiple iterables gets exhausted before others, a `ValueError` gets raised.
 
 ## Class Attributes
 
@@ -310,13 +353,93 @@ greeter()
 
 ## Parallelization
 
-There are different ways to parallelize: `multiprocessing`, `concurrent.futures`. You have `ThreadPoolExecutor` and `ProcessPoolExecutor`.
+There are different main ways to parallelize code in Python: `multiprocessing` and `concurrent.futures` packages.
 
-Important distinction is whether the task is I/O bound or CPU bound. If it is I/O bound the recommendation is to use `ThreadPoolExecutor` and threads that share memory.
+:::info[Key Ideas]
+
+- `multiprocessing` is designed for parallelism for **processes** to bypass the GIL.
+- `concurrent.futures` provides simpler API for both **thread** and **process** parallelsim.
+The package `concurrent.futures` is designed to be a more consistent API around threading and processes. In most cases, `concurrent.futures` can be used instead of `multiprocessing`.
+
+:::
+
+Within `concurrent.futures` you will commonly use `ThreadPoolExecutor` and `ProcessPoolExecutor`.
+
+An important distinction when designing parallelization in Python is thinking about whether the task is I/O bound or CPU bound. If it is I/O bound the recommendation is to use `ThreadPoolExecutor` and threads that share memory as you can bypass the GIL lock.
 
 ### Global Interpreter Lock (GIL)
 
-Fill here...
+The <BlueHighlight>Global Interpreter Lock</BlueHighlight> in Python is a mutex (lock) that allows only one thread to hold control of the Python interpreter and execute Python bytecode in a single process at one time. Hence even if your process spawns multiple threads, only one thread can execute at one time, which bottlenecks CPU bound multithreaded code.
+
+**Why does this exist?**
+
+The main reason for the GIL is to ensure memory safety. CPython uses <BlueHighlight>reference counting</BlueHighlight> to manage memory, where a reference count **variable** tracks the number of references to an object. When the count goes to zero, the memory is released.
+
+Locks are needed to protect the reference count variable from race conditions which can leak memory or cause in-use memory to be released early. A solution is to have a lock for atomic updates to each reference counter, but adding a lock for each object can lead to too many acquisitions and releases of locks or deadlock situations. The solution was therefore a singular lock over the interpreter called the GIL.
+
+:::info[Key Idea]
+
+The Global Interpreter Lock is necessary because CPython memory management (with respect to reference count variables) is **not thread-safe**.
+
+:::
+
+Since we cannot truly have multithreading in Python, the common approach is to use **multiprocessing**, where you use multiple processes instead of threads. With multiprocessing, <GreenHighlight>each Python process gets its own Python interpreter, memory space, and GIL</GreenHighlight>. It enables parallelism while adding slightly more overhead than multithreaded approach.
+
+:::info[Key Idea]
+
+A notable exception is that **the GIL lock is released during I/O operations**, so I/O bound threads can benefit from multithreading in Python. Thus, multithreading is only bottlenecked by the GIL when the program is spending most of its time interpreting CPython bytecode.
+
+It is also the case that **NumPy releases the GIL for low level operations**, hence a lot of numpy operations can run in parallel with multithreading.
+
+:::
+
+### Context and Start Methods
+
+Important to both `multiprocessing` and `concurrent.futures` (which uses `multiprocessing` throughout) with respect to running multiple processes is the different process start methods. Understanding this will be useful to properly employing `ProcessPoolExecutor`. There are three ways:
+
+1. `spawn` - The parent process starts a **fresh interpreter process** so the only resources inherited are what's needed for the process object's `run()` method.
+2. `fork` - The parent process uses `os.fork()` to fork the Python interpreter. <GreenHighlight>This means that all memory from the parent process is inherited</GreenHighlight> including the Python interpreter, loaded modules, and objects (see below for details). For multiple processes, they can share the same pages in memory (with **Copy-On-Write**) as they are marked read-only. It is dangerous to fork for multithreaded processes.
+3. `forkserver` - A hybrid between `fork` and `spawn` that reduces overhead of spawning workers. The concept is simple: have a separate Python server with simpler state `fork()` itself when a new process is needed. Each time you start a child, it asks the "fork server" process to fork a child and run its target callable.
+
+![pythonmp](/img/multiprocessing.png)
+
+<details>
+<summary>What happens during a **fork**?</summary>
+
+With an `os.fork()` call, you are calling the underlying C `fork` implementation [here](https://man7.org/linux/man-pages/man2/fork.2.html). `fork()` creates a new process by **duplicating the calling process**. The child process is the exact copy of the parent process except the child process has its unique PID. The child and parent processes have their own virtual memory address space. However, <GreenHighlight>at the time of call, both memory spaces map to the same physical content or pages.</GreenHighlight>
+
+Things to remember:
+- The entire virtual address space of the parent is **replicated** in the child via a copied page table.
+- The child inherits a duplicate of the parent's file descriptor table.
+- `fork()` is implemented with <BlueHighlight>copy-on-write</BlueHighlight> (COW) pages. This means only **the page table and PTEs of the parent is copied** and not the actual underlying memory pages. Furthermore, the **shared memory pages in both parent and child page tables are marked read-only**.
+- `fork` is **problematic when called in a multithreaded process**, because the child process will only be a single thread, the thread that called `fork()`. But all of the memory including memory of the other threads will still get duplicated including the state of their stack, locks, data structures etc. Say you have Thread A and Thread B. Thread A calls `fork()` while Thread B is holding a mutex. Then after the fork the child process still has access to this mutex which got duplicated, but it appears held while the thread holding it has vanished. If the child process attempts to use the lock you get a **deadlock**.
+
+**Copy-on-write:**
+- Allows for efficient forking because copying the entire memory of parent process is too costly an operation.
+- Why are pages marked read-only in **both parent and child**? Should it not just be the child? Since both parent and child share the mappings to the same physical page, you want to make sure that for isolation, neither of them must see the other's modifications. Hence, when the parent or the child modifies a page, a new page must be allocated.
+</details>
+
+<details>
+<summary>What happens during **spawn**?</summary>
+
+To create a fresh child process without the parent process' memory, spawn first **forks the current process, followed immediately by `exec`** to replace itself with a new Python instance.
+
+`exec()` replaces the current <BlueHighlight>process image</BlueHighlight> (program code, data, heap, stack, PCB) with an entirely new process image, with the argument as the file to be executed.
+</details>
+
+### `multiprocessing.Queue`
+
+An extremely important component of the `multiprocessing` Python package is the `Queue` class. The queue structure is the fundamental way to share data between processes. The queue allows for items to be added with `put()` and retrieved with `get()` with items retrieved in FIFO order.
+
+**Everything that goes through the queue must be picklable.** As per the docs:
+
+> Note that the restrictions on functions and arguments needing to picklable as per multiprocessing.Process apply when using submit() and map() on a ProcessPoolExecutor.
+
+:::info[Key Idea]
+
+Arguments passed into process workers while using `multiprocessing` or `concurrent.futures` are serialized and hence must be picklable.
+
+:::
 
 ## `matplotlib.pyplot`
 

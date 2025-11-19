@@ -198,7 +198,19 @@ A <BlueHighlight>jump</BlueHighlight> is defined as any command that moves the c
 
 You will often want to go back to places your previously jumped your cursor. Smoothly move through history of cursor positions using `Ctrl+o` and `Ctrl+i`.
 
+:::warning[Pitfall]
+
+Note to self: I always forget the reverse jump `Ctrl+i` is just as important - it is very common to accidentally jump back too far with `Ctrl+o`, and need to go back to your original position.
+
+:::
+
 Mashing `Ctrl+o` takes you through previous cursor jumps. To reverse this operation and jump forward through cursor positions do `Ctrl+i`. You can see your jump list with `:ju`. Clear the jump list with `:cle` as the maximum entries is 100.
+
+:::tip[Trick]
+
+You can even combine `ctrl+o` with LSPs go to definition `grd` to jump back to where you were originally after jumping to the definition.
+
+:::
 
 ### Practical Workflow Examples
 

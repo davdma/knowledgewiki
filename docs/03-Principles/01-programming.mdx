@@ -19,3 +19,21 @@ One of the lessons on maintainable code that I learnt (and regrettably so) is th
 There are always opposing tensions when it comes to programming principles. Here there is the tension between locality principle and SRP for testing. Certainly in many cases you may not need to test a function, though it is great to make it testable. A good rule of thumb is **if you can't get it right in three tries, you need to test it**.
 
 :::
+
+## Programming Patterns
+
+### Context Object Pattern
+
+The pattern involves bundling function arguments into context objects (e.g. dataclasses like `AppContext`) and passing it as a single function argument. This avoids unwieldy function calls with dozens of parameters.
+
+:::warning[Pitfall]
+
+The context object pattern must be used with care. In certain scenarios, this can also be an antipattern. For instance if applied too widely throughout the codebase in low levels of orchestration (which does not need all the parameters), the result is unnecessary coupling and high dependency on the context object.
+
+:::
+
+In my own experience, the context object pattern has been really useful in an ML pipeline setting, where many different parameters necessary for configuring an experiment need to be passed through multiple layers of execution.
+
+I learned this from experience. In the beginning of my project, I tried to keep my code explicit with long function signatures with 6-10 arguments for transparency and readability. However I soon discovered that this choice had the tradeoff of low maintainability (frustrating to manage when new parameters were constantly added and old parameters removed). The better solution was to use `OmegaConf` objects instantiated using `yaml` files in Python to encapsulate many experiment arguments. I also chose to pass the `cfg` object for high level functions like `run_experiment` and to avoid doing so for lower level functions like `calculate_weight_decay`. Passing in many parameters that would not be used in a small function increases unnecessary coupling and code brittleness.
+
+For more detail, see the following [video](https://www.youtube.com/watch?v=UG5jbLReDiM).

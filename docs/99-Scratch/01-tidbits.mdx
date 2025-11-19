@@ -143,15 +143,25 @@ train:
 
 ```
 
-## Python as an Interpreter
-
-I've found an urge to branch out of Python because while it is quite a useful and simplistic programming language for machine learning tasks, it is not as useful for building fast applications. I've encountered many difficulties with bottlenecks with Python scripts.
-
-Python bytecode interpreter.
-
 ## IP Addresses
 
-Every machine on a network has an IP address.
+The <BlueHighlight>Internet Protocol address</BlueHighlight> is like a postal address that uniquely identifies a device on a network. Hence every machine on a network has an IP address.
+
+The most common format is IPv4 `192.168.1.10` where each number is 0-255, but you also have IPv6 that can handle more devices `2001:0db8:85a3:0000:0000:8a2e:0370:7334`.
+
+Other notable things about IP:
+- Public vs. Private IP - public IP is assigned by your internet provider and visible to out world. Private IP is used within a local network. Your router uses a technique known as **Network Address Translation (NAT)** to map your private IP to a single public IP when connecting to the internet.
+- Domain Name System (DNS) - allows us to use domain names like `google.com` instead of `142.250.190.78`. DNS translates domain names into IP addresses (this happens implicitly every time you make a network request).
+- `127.0.0.1` or `localhost` **points to your own computer** and is useful for testing servers locally.
+
+### Ports
+
+While IP addresses identifies **machines**, a <BlueHighlight>port</BlueHighlight> identifies a service or process on that machine.
+
+* HTTP - port `80`
+* SSH - port `22`
+
+The IP `192.168.1.10:8080` specifies a custom service on port `8080`.
 
 ## Remote Procedural Call (RPC) Server
 

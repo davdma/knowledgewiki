@@ -109,7 +109,13 @@ Then instead of doing `A;` on the first line, then `j`, then repeat over and ove
 
 Search is a functionality to get acquainted with early on because it will make life much easier navigating a larger document. Simply search by typing `/pattern` in Normal mode, where `pattern` is the word that you are looking for. By default this will match any and all occurrences of the word pattern even if it is embedded within a larger word. This might be a headache say if you are looking for the word `rad` but then it highlights all the instances of `brad`, `trad` in traditional, `rad` in radical. To avoid this issue, use `\<` and `\>` for matching the start and end, so `/\<pattern\>`. Once you hit enter, you can toggle through next and previous search results with `n` and `N` respectively.
 
-There is also a faster to search a word if it is already under your cursor. Just use the key `*`. Then automatically it will execute a search with `/\<word\>` and jump you to the next occurrence.
+There is also a faster way to search a word if it is already under your cursor. Just use the key `*`. Then automatically it will execute a search with `/\<word\>` and jump you to the next occurrence.
+
+:::tip[Trick]
+
+Do not manually type out `/\<word\>` just press `*` on the word!
+
+:::
 
 To match beginning and end of line, use `^` and `$` in the pattern respectively, e.g. `/^the` for only matching the word `the` at the very beginning. Use `.` to match any character in the pattern like regex, so `/t.e` matches `the` as well as `toe`.
 

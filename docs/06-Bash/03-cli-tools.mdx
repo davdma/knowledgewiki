@@ -91,6 +91,26 @@ To make the process sleep for 10 seconds:
 sleep 10
 ```
 
+## PBSNodes
+
+Some useful options for PBSNodes I learned while at Argonne:
+
+### Job Dependencies
+
+A common case is to want jobs to run in a specific order, for instance to have a job wait until another completes execution. PBSNodes allows for this via **dependencies**.
+
+The syntax is:
+
+```bash
+qsub -W depend=<dependency list>
+```
+
+Where `<dependency list>` is in the format `<type>:<arg list>[,<type>:<arg list>]`. The `<arg list>` is simply one or more job IDs in the form `<job ID>[:<job ID>]` e.g. `2409736:2409737`.
+
+There are many dependency types, here are a few:
+- `after:<arg list>` - job starts only after all jobs in list have started execution
+- `afterok:<arg list>` - job starts only after all jobs in list have **terminated with no errors**
+
 ## Compression
 
 ### `tar`

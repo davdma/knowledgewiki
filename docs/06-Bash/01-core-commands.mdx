@@ -599,14 +599,84 @@ echo "Dave, Door, Dash, Moon, Dark" | grep -o "D\w{3}"
 The `awk` command executes programs written in the **awk** programming language specialized for text manipulation. <GreenHighlight>An awk program is a sequence of patterns and corresponding actions if those patterns are matched</GreenHighlight>.
 
 ### `sed`
-### `cut`
+### `cut` Slice Text
+
+The `cut` command prints selected parts of lines to stdout - <GreenHighlight>it is great for slicing text data</GreenHighlight>.
+
+Typical use cases:
+- Extract specific columns from CSV file
+- Parse system logs or outputs
+- Preprocess data in shell script before passing to `sort`, `uniq`, `awk` etc.
+
+Most common to use the flag `-f` to specify which field and `-d` to specify the field delimiters (default is TAB).
+
+For example, to extract the first column from the CSV:
+
+```bash
+cut -d',' -f1 data.csv
+```
+
 ### `sort` Sort Lines
 
-Use `sort` to sort lines of text files.
+Use `sort` to sort lines of text files. No file or file `-` will read in stdin. It sorts **by default alphabetically**. For numerical sorting, you must use the flag `-n`.
+
+Common flags include `-r` to reverse the sorting, and `-u` to output only unique lines. So you will often see:
+
+```bash
+sort -r -u file1.txt
+```
+
+Another common use case is to compare human readable file sizes `2K`, `1G` etc. To do that, use the flag `-h` for sorting human readable file sizes:
+
+```bash
+sort -h file.txt
+```
+
+You can also set delimiter (besides default blank to nonblank) using `-t` and sort by column using the `-k` or key flag:
+
+```bash
+# Need , delimiter for csv
+# KEYDEF=2,2n means 2nd column and numerical type
+sort -t, -k2,2n data.csv
+```
+
+### `comm` Compare Sorted
+
+The `comm` command in the form `comm FILE1 FILE2` compares **sorted** files FILE1 and FILE2 line by line. Use the flags `-1` to suppress col 1 (lines unique to FILE1), `-2` to suppress col 2 (lines unique to FILE2) and `-3` to suppress col 3 (lines that appear in both files).
+
+One common use case is to compare the lines of two separate outputs. For instance, if I want to see what subdirectory names are shared between `folder1` and `folder2`, I can do the following:
+
+```bash
+comm -12 \
+<(find folder1 -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort) \
+<(find folder2 -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort)
+```
+
+:::note[Detail]
+
+The syntax `<(...)` or `>(...)` is <BlueHighlight>process substitution</BlueHighlight> and allows you **to treat a process' input or output as a filename**. This <GreenHighlight>allows you to pipe the stdout of multiple commands in a single line</GreenHighlight>.
+
+With `<(...)` what happens is that the output of the command is evaluated asynchronously, and the value inside is saved to a temporary file. The expression then returns the filename, typically `dev/fd/63` which works with any commands that expect `FILE`.
+
+The difference between `<(command)` and `>(command)` is that `<(command)` provides the output of the command as a file, while `>(command)` provides what is written to the file as input for the command inside.
+
+:::
 
 ### `uniq` Repeated Lines
 
 The `uniq` command filters out matching lines adjacent to each other. By default sequential matching lines are merged to the first occurrence. **NOTE: it does not detect repeated lines unless they are adjacent!** Either sort the input first or use `sort -u` without `uniq`.
+
+### `diff` Compare Lines
+
+When given two args (files or directories) `diff` shows what changed between the two, comparing line by line. It outputs lines added, removed or modified. 
+
+The default classic format is quite difficult to read. The `-u` flag toggles **unified format** which is much more readable with `+` and `-` lines, and shows context lines (unchanged lines around differences). This is the same format as `git diff` but for arbitrary files on the filesystem.
+
+:::info[Key Idea]
+
+Git actually uses `diff` under the hood! `git diff` is just a `diff` wrapper.
+
+:::
 
 ### `wc` Count
 
@@ -873,6 +943,32 @@ Invokes a command immune to hang ups, i.e. it will ignore the `SIGHUP` signal. B
 # Run the python script in the background, ignore hang up signal
 nohup python train_models.py &
 ```
+
+## Useful Utilities
+
+### `parallel` Run in Parallel
+
+The GNU utility `parallel` is one of the most powerful tools to learn. It allows you to easily run multiple jobs in parallel on the command line. It is written to be similar to `xargs` in terms of options. The output from `parallel` is also ensured as the same as you would get from a sequential run of the command.
+
+For example, if you wanted to compress all html files using gzip, you can do it in parallel:
+
+```bash
+find . -name '*.html' | parallel gzip --best
+```
+
+Say you wanted to generate thumbnails for each `.jpg` file, but it is extremely slow sequentially:
+
+```bash
+convert -geometry 120 foo.jpg thumb_foo.jpg
+```
+
+Then you can simply do:
+
+```bash
+ls *.jpg | parallel convert -geometry 120 {} thumb_{}
+```
+
+### `jq`
 
 ## Others
 
