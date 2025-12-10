@@ -22,8 +22,9 @@ A core feature of the knowledge wiki is the simplicity and ease of access for LL
 
 # Usage
 
-* Use `glow` to display markdown files in the terminal.
-* Initialize Claude Code in the directory. It's suggested to write a comprehensive `Claude.md` with instructions on how to be an optimal note-taking assistant in the repo that follows a systematic workflow + understands Docusaurus functionality (see below).
+* Modify or add markdown files in the github repo.
+* For highlights, bubbles, images, among other features, follow the Docusaurus formatting instructions below.
+* Initialize Claude Code in the directory. It's suggested to write a comprehensive `Claude.md` with instructions on how to be an optimal note-taking assistant in the repo that follows a systematic workflow + understands Docusaurus functionality.
 
 # AI Notetaking
 

@@ -35,6 +35,18 @@ The shell scripting language is just like Python, Perl and Ruby - it's a high le
 * Write programs to read from stdin and write to stdout, with error messages to stderr. This makes programs easy to use as <BlueHighlight>data filters</BlueHighlight> which act as components in larger pipelines or scripts.
 * Avoid messages mixed into stdout of program (at least by default).
 
+## Executing Commands
+
+Many of the system command exist in compiled form on the system (you can find them with `which`). When these programs are executed, Bash performs a <BlueHighlight>fork-and-exec</BlueHighlight>. Bash creates a new process with the exact environment as the parent via a `fork`, followed by an `exec` call to the system to replace the contents of the current process with the new program.
+
+For instance when you run `find`, the shell forks, then the child process loads the `find` program into memory and sets up command line args.
+
+:::info[Key Idea]
+
+Blank...
+
+:::
+
 ## The `#!` Shebang
 
 The special first lines in the script start with `#!` to specify to the kernel the full path to **the interpreter** to use to run the program, as well as a single option to pass to the interpreter.
@@ -84,6 +96,68 @@ first=isaac  middle=bashevis last=singer # multiple assignments allowed per line
 fullnam="$first $middle $last"
 ```
 
-### `echo`
+## Globbing
 
-Echo prints each of its arguments to stdout separated by a single space and terminated with newline.
+While commands and utilities like `grep`, `sed`, `awk` recognize regex, the **bash interpreter does not use regex**. Instead, bash itself operates via <BlueHighlight>globbing</BlueHighlight>.
+
+Globbing is <GreenHighlight>the process of filename expansion using wild cards</GreenHighlight>. In other words, given a glob pattern, globbing expands the wild card pattern into **a list of pathnames matching the pattern.** Note that wild card characters `*`, `?`, `[]` have different meanings than in RE.
+
+:::info[Key Idea]
+
+In bash arguments, when it sees **unquoted** wild cards it will do glob expansions before the command runs. Otherwise, quoted wildcards will safely be interpreted as regex if passed to `grep` or any other regex based commands.
+
+:::
+
+Reiterating the key idea: when you use special characters in unquoted command line arguments, bash performs filename expansion. For example, when you run the line:
+
+```bash
+rm *.txt
+```
+
+If the files in your directory are `file1.txt`, `file2.txt`, `file3.txt`, bash will expand the wildcard argument into:
+
+```bash
+rm file1.txt file2.txt file3.txt
+```
+
+You can also see this by doing:
+
+```bash
+echo *.txt
+# file1.txt
+# file2.txt
+# file3.txt
+```
+
+```bash
+echo notafile *.txt
+# notafile
+# file1.txt
+# file2.txt
+# file3.xt
+```
+
+:::info[Key Idea]
+
+**A string is a wildcard pattern if it contains one of the characters `?`, `*`, or `[`.**
+
+:::
+
+What are each of the glob special characters and their function?
+- `?` matches any single character
+- `*` matches any string, including the empty string
+- `[...]` matches a single character that is one of any of the characters inside the brackets
+- `[!...]` matches a single character that is in the complement of the set of characters
+- `[0-9]` or any two characters separated by `-` denote a range. For example `[A-Fa-f0-9]` is equivalent to `[ABCDEFabcdef0123456789]`
+
+## Job Control
+
+Bash allows users to selectively suspend and resume processes through <BlueHighlight>job control</BlueHighlight>. Each **job** is associated with a **pipeline** aka a string of commands chained with `|` (stdout) pipes or `|&` (stdout + stderr) pipes.
+
+### Foreground, Background Processes
+
+The implementation for job control is that each process is given a **process group ID**. Processes with the same process group ID are part of the same process group. <GreenHighlight>Foreground and background processes are based upon whether the process shares the current terminal process group ID</GreenHighlight>.
+
+Foreground processes, or members of the foreground process group (equal to the current terminal process group ID) receive keyboard generated signals like `SIGINT`. Background processes are those processes with process group ID different from the controlling terminal. **Background processes are unaffected by keyboard generated signals**.
+
+You can suspend running jobs with `Ctrl+Z`, then use `fg` to continue in foreground, `bg` in background, or `kill` to kill.

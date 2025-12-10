@@ -111,10 +111,107 @@ There are many dependency types, here are a few:
 - `after:<arg list>` - job starts only after all jobs in list have started execution
 - `afterok:<arg list>` - job starts only after all jobs in list have **terminated with no errors**
 
-## Compression
+## Archiving & Compression
 
-### `tar`
-### `zip`, `unzip`
+### `tar` Archives
+
+The GNU `tar` stands for **Tape ARchive**, and stores files together into a single <BlueHighlight>archive</BlueHighlight>, with the ability to restore individual files from the archive. An archive is essentially <GreenHighlight>a single file that contains the contents of many files</GreenHighlight>, while still preserving information of file names, owners, permissions and such. With `tar` you **both create and extract** archives, list its contents, or append new files to the archive.
+
+`tar` is very common for Unix systems because it was built for Unix, and preserves `uid`, `gid`, permissions. To best understand its concepts, highly recommend reading the [manual](https://www.gnu.org/software/tar/manual/tar.html#Introduction).
+
+:::info[Key Idea]
+
+The `tar` tool is solely about <GreenHighlight>bundling files</GreenHighlight>. Note the difference between **archiving** and **compression**. Compression can be done on top of archiving in `tar`, but it is a secondary functionality.
+
+Compressors like `gzip` by itself cannot do archiving. To compress multiple files into a single file, you must first `tar` and bundle them together, and then compress the bundled archive, which can all be done in `tar`.
+
+:::
+
+The most frequently used operations are to **create**, **list**, and **extract** archives using `tar`, corresponding to `-c`, `-t` and `-x`. <GreenHighlight>You can only use one operational mode per command</GreenHighlight>.
+
+The most frequently used options on top of an operation are `--file` for specifying the name of the archive file and `--verbose`, corresponding to -f` and `-v`. It is recommended to always specify an archive file!
+
+For instances:
+
+```bash
+# create an archive called archive.tar from files foo and bar
+tar -cf archive.tar foo bar
+
+# examine the contents of the archive
+tar -tf archive.tar
+
+# extract all files from archive.tar
+tar -xf archive.tar
+
+# extract a specific file from archive.tar
+tar -xf archive.tar foo
+```
+
+If use the verbose flag with the list operation, you get owner, file size info like `ls -l`:
+
+```bash
+tar -tf archive.tar
+-rw-r--r-- davidma/davidma   0 2025-11-27 16:59 foo
+-rw-r--r-- davidma/davidma   0 2025-11-27 16:59 bar
+```
+
+:::info[Key Idea]
+
+`tar` also supports creating and reading **compressed** `tar` archives! `tar` supports compressions from `gzip`, `bzip2`, and so on.
+
+:::
+
+To work with compressed formats, simply provide the compression option in the form of a flag during archive creation:
+- `--gzip` or `-z` for `gzip`
+- `--bzip` or `-j` for `bzip2`
+- `--auto-compress` or `-a` for compression based on the file suffix
+
+```bash
+# select gzip
+tar -czf archive.tar.gz foo bar
+
+# autocompress based on the suffix
+tar -caf archive.tar.gz foo bar
+```
+
+For extracting compressed files, there is no need to specify the compression type as `tar` will detect it based off file signature:
+
+```bash
+tar -xf archive.tar.gz
+```
+
+Extensions like `.tgz`, `.tar`, and `tar.gz` extension indicate it is a tar archive compressed using `gzip`. Sometimes you might see `.tar.bz` if it was compressed using `bzip`.
+
+<details>
+<summary>`tar.gz` vs `zip`</summary>
+
+The difference between choosing `tar.gz` or `zip` mainly boils down to compression size. Since `zip` compresses each file individually compared to `tar.gz` which compresses the entire archive, `zip` typically has larger file sizes.
+
+</details>
+
+### `zip`, `unzip` Compression
+
+`zip` is a file compression utility that puts one or more compressed files into a **zip archive**. It's good for packaging files for distribution, archiving files, or compressing files.
+
+:::info[Key Idea]
+
+Very similar to `tar`, `zip` works with zip archives. You can add, update, delete entries within a zip archive.
+
+:::
+
+The main command structure is `zip [options] archive inpath inpath ...`, where `archive` specifies the new or pre-existing zip archive to send compressed files to.
+
+The company program to `zip` for decompression is `unzip`, which can **list**, **test**, or **extract** files from a zip archive. By default all files and subdirectories are extracted into the current directory. For a different directory, you can specify a `-d exdir` external directory.
+
+A powerful flag is the `-@` flag to compress files taken from stdin:
+
+```bash
+# store all files from stdin to foo.zip
+zip -@ foo
+
+# archive all C source files in current dir
+find . -name "*.[ch]" -print | zip -@ source
+```
 
 ## Package Managers
 

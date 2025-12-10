@@ -37,3 +37,37 @@ In a clean shell on LCRC, my path list is:
 ```txt
 PATH=/home/dma/miniconda3/bin:/home/dma/miniconda3/condabin:/usr/lpp/mmfs/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/opt/pbs/bin:/home/dma/.local/bin:/home/dma/bin
 ```
+
+## PyTorch CPU Contention
+
+**Torch by default in any process sets the number of threads to the number of system cores.** This can unknowingly lead to massive CPU contention if you have multiple torch processes running.
+
+I found out about this bug while trying to parallelize `torch` inference with multiprocessing. Turns out that `torch` operations in worker processes by default sets `num_threads` to the total number of cores on the system. Consequently, the time for model inference actually increases across all processes as they end up fighting over the cpu resources.
+
+Specifically what happened was my job was allocated 128 ncpus. Then with each process that I created, it set the `torch` number of threads by default to 128. So each of say four processes attempted to perform multithreaded `torch` operations using 128 threads at the same time. As a result, there was a massive slow down that was near ~40x.
+
+The fix was simply at worker process initialization to run:
+
+```python
+torch.set_num_threads(8) # a small number
+```
+
+## Slow HPC Writes
+
+For the preprocessing script for the SAR floodmapping dataset with 8000 tiles, I needed to make it robust and efficient for hundreds of gigabytes of patches. A strategy I devised is to have parallel workers load and patch the tiles in chunks, and save each chunk to file. The chunks would then be streamed to a final memory mapped array. This strategy allowed for producing 300GB+ `.npy` files with limited RAM.
+
+While the parallel patching and chunking was fast, I encountered a bottleneck with subsequently writing the chunks to a large memmapped array. The writes would happen sequentially. The problematic code would take close to two hours to finish for two chunk files with a total combined size of 30GB:
+
+```python
+for tmp_file in chunk_files:
+    with np.load(tmp_file) as arr:
+        n_patches = arr.shape[0]
+
+        # this part is incredibly slow for large 10GB+ chunk files!!!!
+        final_arr[patch_offset:patch_offset + n_patches, ...] = arr
+        patch_offset += n_patches
+```
+
+One possibility for this bottleneck is the networking bandwidth of 
+
+At this point I realize I need to learn about the HPC system. More specifically the scratch space, GPFS filesystems.

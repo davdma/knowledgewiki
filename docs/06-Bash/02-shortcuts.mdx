@@ -80,3 +80,43 @@ FYI with `fzf` shell integration `Ctrl + R` is even more neat as it will display
 ## Copying Terminal Output
 
 I struggled with figuring out how to copy terminal output to system clipboard (not the GNU Readline buffer) for the longest time. Turns out you just need to drag with your mouse over a selection on the terminal screen and release. It's automatically copied to your system clipboard and you can do `Ctrl + V`.
+
+## Suspend Foreground Process `Ctrl + Z`
+
+I learned by accident when trying to undo inside `nvim`, that `Ctrl + Z` just suspends the current foreground process (takes me out of my editor to shell):
+
+```bash
+# Ctrl + Z from inside "nvim ." process
+[1]+  Stopped       nvim .
+```
+
+To start the process again and resume editing in Neovim, simply do:
+
+```bash
+# Resume
+fg 1
+```
+
+This is all part of [GNU job control](https://www.gnu.org/software/bash/manual/html_node/Job-Control-Basics.html) which involves the ability to selectively stop (suspend) execution of processes and continue (resume) them later. The shell keeps a table of currently executing jobs, which `jobs` will display. Each job has a corresponding job number which `jobs` displays between brackets e.g. `[1]`.
+
+A job started asynchronously might print:
+
+```bash
+[1] 23904
+```
+
+Which indicates job number 1 with the PID 23904 of the last process in the pipeline associated with this job.
+
+:::info[Key Idea]
+
+In bash you have foreground **(fg)** and background **(bg)** processes. A <BlueHighlight>foreground process</BlueHighlight> occupies the shell window, and blocks subsequent commands until it has finished, for instance the `nvim` text editor program I was using to edit my notes. A <BlueHighlight>background process</BlueHighlight> runs while still allowing the user to interact with the shell.
+
+- Use `Ctrl+Z` to suspend the current foreground process
+- Use `jobs` to view active background processes (suspended processes will show up here)
+- Use `fg` to put the recently suspended process in the foreground
+- Use `bg` to put the recently suspended process in the background
+- Use `&` to run a program in the background from the beginning.
+
+:::
+
+Read more in the [job control](00-scripting.mdx#job-control) section of the notes.

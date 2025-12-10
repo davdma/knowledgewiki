@@ -10,6 +10,51 @@ Ultimately, a good principle to follow is instead the <BlueHighlight> Locality o
 
 > "The primary feature for easy maintenance is locality: locality is that characteristic of source code that enables a programmer to understand that source by looking at only a small portion of it." - Richard Gabriel
 
+## Inversion of Control
+
+The design principle <BlueHighlight>Inversion of Control</BlueHighlight> (IoC) is key to simplifying abstractions. The issue working with abstractions is that they are often leaky. As a developer you fall into cycles of refining these abstractions, constantly adding new options and cases the abstraction supports that it becomes unwieldy, bug riddled, and difficult to maintain.
+
+Inversion of Control alleviates this problem by **inverting the control flow of the program**.
+
+A simple illustration of how **inversion of control** helps deal with these headaches, take the example of a basic function to filter out missing values from an array:
+
+```python
+# start with a simple filtering functionality
+def filter_arr(arr):
+    return [elem for elem in arr if elem is not None]
+
+# now let's refine this abstraction to support many missing types
+def filter_arr(arr, filterNone = True, filterEmptyString = False, filterZero = False):
+    lst = []
+    for elem in arr:
+        if filterNone and elem is None:
+            continue
+        if filterEmptyString and elem == "":
+            continue
+        if filterZero and elem == 0:
+            continue
+        lst.append(elem)
+    return lst
+```
+
+To invert control, we could do the following:
+
+```python
+def filter_arr(arr, filter_fn):
+    """filter_fn returns True if element is kept"""
+    return [elem for elem in arr if filter_fn(elem)]
+```
+
+Now the responsibility of defining how to filter the elements of the list has been moved out of the function to the user. These types of control inverted APIs might take more time to use, but the benefit is that they allow you to build more abstractions on top of them with ease (extensibility). A lot of the time when adjusting the API for someone using it slightly differently, instead of going for the `if` or ternary operator, consider using inversion of control. It also avoids the issue of making bad assumptions about future possible use of a reusable piece of code.
+
+<GreenHighlight>Inversion of Control is the fundamental characteristic behind frameworks</GreenHighlight>. Instead of you calling the framework, the framework calls your tailored code **(hollywood principle "don't call us, we'll call you")**. The framework plays the role of coordinator and hence is powerful as an extensible skeleton. The user supplies the methods that tailor the framework's generic algorithm.
+
+:::warning[Pitfall]
+
+Do not confuse Inversion of Control Principle with the SOLID **Dependency Inversion Principle** which is about making both high and low level modules depend on abstractions (interfaces or abstract classes) rather than high level depending on low level specific implementations (to encourage loose coupling).
+
+:::
+
 ## Lessons
 
 One of the lessons on maintainable code that I learnt (and regrettably so) is the importance of separating data loading I/O and data manipulation. In my Argonne flood mapping project, I made the mistake of encapsulating in one singular function **(many times!)** both the data loading logic (say reading data from some file) and certain operational logic on that data (say computing mean std). At first this seems attractive because it simplifies the codebase so you have all the logic in one place (cough cough locality). The problem later on however, is that this hinders **TDD** because you cannot easily test the data loading and computation separately. Consequently, it forces you to create a lot of messy ways to hand dummy data over to the function in order to evaluate it at test time. The rule here is that for proper testing, <GreenHighlight>**the input to the function should be createable** looking at it from the outside, so you do not need to create mocks. Keeping data retrieval and data manipulation as separate functions makes things much easier to test.</GreenHighlight>

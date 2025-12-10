@@ -581,12 +581,31 @@ In short, certain special characters lose meaning in basic regex if not prefixed
 `grep` by default uses basic regular expressions (BRE) but can support extended regular expressions (ERE). If you want use extended regex patterns you must **enable extended regex** mode with `-E` flag:
 
 ```bash
-echo "Dave, Door, Dash, Moon, Dark" | grep -o "D\w{3}"
+echo "Dave, Door, Dash, Moon, Dark" | grep -o -E "D\w{3}"
 # Dave
 # Door
 # Dash
 # Dark
 ```
+
+Another common need when grepping is to grep the surrounding lines of a match. To do this, use the `-A NUM` flag to specify NUM lines of context **after** a match, and the `-B NUM` flag to specify NUM lines of context **before** a match. For equal context on both sides you can use `-C NUM` for context.
+
+```bash
+# we only want the chunk around my jobs (not all server jobs)
+qstat -f | grep -A 20 -B 4 dma
+```
+
+Sometimes you want to extract a number within a specific line of a file, but there are many numbers scattered throughout the file. You can do this by simply chaining `grep` and piping one `grep` operation into another!
+
+```bash
+grep -o "Number of successful events: [0-9]+" main_*.log | grep -o '[0-9]+'
+```
+
+:::note[Detail]
+
+`grep` is good for filtering lines and printing matches. For more complex operations where you are editing or transforming text, or scripting, use `sed` or `awk`.
+
+:::
 
 ### `fgrep` Fast Grep
 
@@ -594,9 +613,157 @@ echo "Dave, Door, Dash, Moon, Dark" | grep -o "D\w{3}"
 
 **Matching a single pattern with `fgrep` is not significantly faster than grep.**
 
-### `awk`
+### `awk` Processing Language
 
-The `awk` command executes programs written in the **awk** programming language specialized for text manipulation. <GreenHighlight>An awk program is a sequence of patterns and corresponding actions if those patterns are matched</GreenHighlight>.
+The `awk` command executes programs written in the **awk programming language** specialized for text manipulation. <GreenHighlight>An awk program is a sequence of patterns and corresponding actions if those patterns are matched</GreenHighlight>.
+
+To use `awk`, you must first understand the language. The `Hello World` of `awk` is as follows:
+
+```bash
+echo 'this line is ignored' > test
+awk '{ print "Hello World" }' test
+# Hello World
+```
+
+In this example, the script performs a single action, executing the print statement for each line of input. In this case we have a single line in the file `test`, so the print action is done once. Hence `awk` is <GreenHighlight>input driven, and attempts to execute instructions for each line of input</GreenHighlight>.
+
+If you do not want awk to wait for input, the `BEGIN` pattern specifies actions that are performed **before** the first line of input is read.
+
+```bash
+awk 'BEGIN { print "Hello World" }'
+# Hello World
+```
+
+What is actually happening here? An awk program consists of **a main input loop**, a routine that is executed over and over until meeting a condition that terminates it. The main input loop is executed for each line of input. Inside the main loop, you write a series of pattern/action procedures. A <BlueHighlight>pattern</BlueHighlight> is a rule for testing the input line to determine if the action should be applied or not. This can consist of statements, functions and expressions.
+
+Awk also has two special routines that are executed **before** and **after** input is read, corresponding to the `BEGIN` and `END` options.
+
+:::info[Key Idea]
+
+An `awk` script consists of 3 parts: what happens before, during, and after processing input.
+
+1. `BEGIN` - first routine executed once before reading any input
+2. main input loop - executed for each line of input
+3. `END` - routine executed once after all input read
+
+:::
+
+For example, if the input line is blank, then print `"This is a blank line"`:
+```bash
+/^$/ { print "This is a blank line." }
+```
+
+Other rules:
+```txt
+/[0-9]+/    { print "That is an integer" }
+/[A-Za-z]+/ { print "That is a string" }
+```
+
+It is common practice to put all these rules into a script which is fed into `awk` like so (with added comments as well):
+
+```txt title="test.awk"
+# test.awk -- Test for string, integer, or blank
+/[0-9]+/ { print "That is an integer" }
+/[A-Za-z]+/ { print "This is a string" }
+/^$/ { print "This is a blank line." }
+```
+
+Then run `awk -f test.awk` to take input from stdin.
+
+An important note is that **a line can match more than one rule**, so if you feed in the line `4T` to the above integer and string rules, you get both `"That is an integer"` and `"That is a string"` printed out for one line.
+
+To reference fields in actions, use the **field operator** `$`, where it is followed by a number or variable identifying the position of the field. `$1` means the first field, `$2` for the second field, and so on, with `$0` meaning entire input line. The delimiters or field separators used for extraction are white spaces by default but it can be changed with the `-F` flag.
+
+```bash
+awk '{ print $2, $1, $3 }' names
+# Robinson John 400-240-0080
+```
+
+A more advanced awk program:
+```txt title="blocklist.awk"
+# blocklist.awk -- print name and address in block form
+# input file -- name, company, street, city, state, zip, phone
+{
+    print ""    # output blank line
+    print $1    # name
+    print $2    # company
+    print $3    # street
+    print $4, $5 # city, state zip
+}
+```
+
+This would output something like:
+```bash
+awk -F, -f blocklist.awk names
+#
+# John Robinson
+# Koren Inc.
+# 3050 88th Ave
+# Boston, MA 88010
+#
+# Phyllis Chapper
+# Cats Inc.
+# 6060 20th Ave
+# Seattle, Wa 70700
+```
+
+:::note[Detail]
+
+It is best practice to specify the delimiter in the `awk` file instead of passing it in via the `-F` flag:
+
+```txt title="blocklist.awk"
+BEGIN { FS = "," }
+...
+```
+
+:::
+
+`awk` is great for doing arithmetic with numbers in text files. Take for example averaging:
+
+```txt title="grades.awk"
+# average five grades
+# input file -- name, grade1, grade2, grade3, grade4, grade5
+{
+    total = $2 + $3 + $4 + $5 + $6
+    avg = total / 5
+    print $1, avg
+}
+```
+
+```bash
+awk -f grades.awk grades
+# john 87.5
+# dave 99.9
+# joy 40.0
+```
+
+**String functions** are a powerful part of `awk`:
+- `substr(s, p, n)` - returns substring of string `s` from position `p` up to maximum length of `n`. If `n` not supplied, returns from `p` to the end.
+- `match(s, r)` - returns either the position in `s` where regular expression `r` begins, or 0 if no occurences found.
+
+The `match()` function allows you to determine if a regex matches a specified string, and returns the **index of the match**. It sets a `RSTART` and `RLENGTH` system variables that allows you to grab the substring.
+
+:::tip[Trick]
+
+You can use the values captured by regex groups:
+
+```bash
+awk 'match($0, /N=([0-9]+)/, arr) {print arr[1]}' file.txt
+```
+
+:::
+
+A good example of how I used `awk` is when I wanted to take all my log files `main_*.log` and extract a number from each and sum them up:
+
+```txt title="sum.awk"
+# sum.awk -- calculate the total number of events sampled from script
+match($0, /Number of successful events sampled from this run: ([0-9]+)/, m) { sum += m[1] }
+END { print sum }
+```
+
+```bash
+grep "Number of successful events" main_*.log | awk -f sum.awk
+```
 
 ### `sed`
 ### `cut` Slice Text
@@ -703,7 +870,53 @@ find . -maxdepth 1 -type f | wc -l
 
 ## Networking
 
-### `curl`
+### `curl` Transfer URL Data
+
+The tool `curl` is commonly used to **transfer data from and to a server using URLs**. It supports a wide range of protocols from `HTTP`, `HTTPS`, `TFTP`, `FTP`, `DICT`, `SCP`, etc.
+
+The basic form is `curl [URL]` where the URL syntax is **protocol dependent**. `curl` will determine the protocol based on the leading `protocol://` scheme, so `https://` tells `curl` that it is `HTTPS` protocol.
+
+By default `curl` writes the received data to stdout, but usually you want to save to file. For output, the `-o file.txt` saves as a specific file, otherwise the `-O` flag will save automatically using the remote filename. In scripts it's useful to use `-s` silence flag to avoid printing the progress bar.
+
+For instance, to download the AWS CLI, you would first get the zip file using:
+
+```bash
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+```
+
+This saves `awscliv2.zip` in the cwd. If you want to specify an output directory, you can also use the `--output-dir` option, e.g. `curl https://example.com --output-dir "tmp" -O`
+
+:::info[Key Idea]
+
+`curl` is a tool for general client-server requests. Hence it not only supports the `GET` request (the default), but also supports `POST`, `PUT`, `DELETE` and more. You can change the request method using the `-X, --request` flag.
+
+```bash
+curl -X "DELETE" https://example.com
+```
+
+It is common to send data in a POST request to an http server. This can be done with the `--json` option which sets the method and header without needing `-X`:
+
+```bash
+curl --json '{ "drink": "coffe" }' https://example.com
+```
+
+:::
+
+The header flag `-H` can be useful to include extra header information on a request, and you can do `-H` multiple times. This allows `curl` to provide authentication options such as a **bearer token**:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+    -H "Accept: application/json" \
+    https://api.example.com/user
+```
+
+`curl` also supports globbing with the URLS, where lists in braces or brackets (ranges) can denote multiple URLs at once. In this case you might also need to use `#` followed by the number in the file name that is saved for output file names:
+
+```bash
+# hashtag is replaced by the string being fetched
+curl "http://{one,two}.example.com" -o "file_#1.txt"
+```
+
 ### `wget`
 ### `ping`
 ### `netstat`
@@ -732,11 +945,12 @@ ps -U $USER
 
 <details>
 <summary>RUID vs. EUID</summary>
+
 Real User ID (RUID): The user who **started the process**. If you are logged in as user `dma` on swing and run `script.py`, the process has your RUID. The shell you start has your RUID, and all processes launched from the shell inherit that RUID.
 
 Effective User ID (EUID): Determines what **permissions** the process has, e.g. a program may belong to a user but run with elevated EUID like `root`. If the EUID is your user, then it can only do what you can do. If the EUID is `root`, it can do pretty much anything.
 
-Every process has an **RUID** and **EUID**. The **RUID* tells the system who started the process, and the **EUID** tells the system what the process is allowed to do. <GreenHighlight>When a process tries to access a file, socket, or device, the kernel first checks its **EUID** against the file's permissions!</GreenHighlight>
+Every process has an **RUID** and **EUID**. The **RUID** tells the system who started the process, and the **EUID** tells the system what the process is allowed to do. <GreenHighlight>When a process tries to access a file, socket, or device, the kernel first checks its **EUID** against the file's permissions!</GreenHighlight>
 
 **RUID == EUID** means no privilege escalation, but higher EUID can allow for limited & controlled privilege escalation (see note).
 </details>
@@ -745,7 +959,7 @@ Every process has an **RUID** and **EUID**. The **RUID* tells the system who sta
 
 When a binary has the **setuid** bit set in file permissions, e.g. `-rwsr-xr-x` (`s` instead of `x` in owners execute permission), when program runs, its EUID is set to the file owner instead of the user who ran it.
 
-Thus `/bin/ping` which is owned by `root` and has the setuid bit when run by a usercan open raw sockets (something only `root` has access to).
+Thus `/bin/ping` which is owned by `root` and has the setuid bit when run by a user can open raw sockets (something only `root` has access to).
 
 :::
 
@@ -913,6 +1127,18 @@ find . -name "*.log" | xargs rm
 ```
 
 Which converts the files found by `find` into an `rm file1.log file2.log ...` call.
+
+:::warning[Pitfall]
+
+By default `xargs` splits the args on **any whitespace** (blanks and newlines) and treats consecutive whitespaces as a single delimiter. Hence you must be extra careful when piping in filenames with whitespaces like `my file.txt` as `xargs` will treat `my` and `file.txt` as separate arguments and send them into the command.
+
+In these cases pass in null character delimited filenames (e.g. `-print0` option from `find`) and use the `-0` flag which recognizes null character as delimiter:
+
+```bash
+find . -type f -print0 | xargs -0 rm
+```
+
+:::
 
 The `-n` flag specifies the **max arguments per command** so `-n 1` will run the command 10 times for 10 arguments.
 
