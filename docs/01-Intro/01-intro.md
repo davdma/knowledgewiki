@@ -1,6 +1,6 @@
 # The Knowledge Wiki
 
-The knowledge wiki is a centralized notes repo for anything I have learnt and am currently learning. Each folder represents a topic of interest with markdown files serving as individual sections within that topic. The repo serves as an active "learning log" that will continually evolve and grow as I learn new tid bits and add them into the markdown pages. The goal is to capture, organize, and revisit these notes with the assistance of AI tools, to enable a powerful learning workflow.
+The knowledge wiki is a centralized notes repo for anything I have learnt and am currently learning. Each folder represents a topic of interest with markdown files serving as individual sections within that topic. The repo serves as an active "learning log" that will continually evolve and grow with time. The markdown format is organized to be friendly for LLMs for AI-assisted note taking and quizzing.
 
 An example structure:
 
@@ -18,8 +18,6 @@ docs/
     └── claude_code.md        # Claude Code usage and tips
 ```
 
-A core feature of the knowledge wiki is the simplicity and ease of access for LLMs and AI tools like Claude Code. Besides allowing AI tools to crawl through my directory and notes to generate summaries or answer queries, the repo can also be exported through tools like [gitingest](https://gitingest.com/) for external LLMs input.
-
 # Usage
 
 * Modify or add markdown files in the github repo.
@@ -33,6 +31,8 @@ The big advantage of having AI-powered notes is having automated quiz generation
 A suggested learning workflow that takes advantage of AI agents:
 * Every time I learn something useful, I jot it down. Then I have Claude clarify, generate examples, and add summary to markdown. Keep concise overview of contents at the top of the file (let AI generate it) with raw notes below.
 * For retention use LLMs to generate Q&A from markdown notes - active recall through quizzing is important. Can ask LLM to vary formats from multiple choice, open-ended, true/false to "explain like I'm 5". After a quiz it's also useful to prompt the LLM on the topics I seem most shaky on and to suggest next learning steps.
+
+Besides allowing AI tools to crawl through my directory and notes to generate summaries or answer queries, the repo can also be exported through tools like [gitingest](https://gitingest.com/) for external LLMs input.
 
 # Docusaurus
 

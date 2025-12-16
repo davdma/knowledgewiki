@@ -52,13 +52,15 @@ The fix was simply at worker process initialization to run:
 torch.set_num_threads(8) # a small number
 ```
 
-## Slow HPC Writes
+## Slow HPC GPFS Writes
 
 For the preprocessing script for the SAR floodmapping dataset with 8000 tiles, I needed to make it robust and efficient for hundreds of gigabytes of patches. A strategy I devised is to have parallel workers load and patch the tiles in chunks, and save each chunk to file. The chunks would then be streamed to a final memory mapped array. This strategy allowed for producing 300GB+ `.npy` files with limited RAM.
 
 While the parallel patching and chunking was fast, I encountered a bottleneck with subsequently writing the chunks to a large memmapped array. The writes would happen sequentially. The problematic code would take close to two hours to finish for two chunk files with a total combined size of 30GB:
 
 ```python
+final_arr = np.lib.format.open_memmap(output_file, mode="w+", dtype=np.float32, shape=(total_patches, S2_DATASET_CHANNELS, size, size))
+
 for tmp_file in chunk_files:
     with np.load(tmp_file) as arr:
         n_patches = arr.shape[0]
@@ -68,6 +70,22 @@ for tmp_file in chunk_files:
         patch_offset += n_patches
 ```
 
-One possibility for this bottleneck is the networking bandwidth of 
+One possibility for this bottleneck is the networking bandwidth of GPFS on the Argonne clusters. I was making page by page writes to the filesystem by using my project directory `/lcrc/project/hydrosm/dma/data/preprocess`. Instead, I realized that I can greatly speedup the latency by using the local scratch space (~1TB in size) which is attached to the compute node. Since the harddrive is directly attached to the compute node and does not use GPFS, it is much much faster. With `findmnt` I learned that `/scratch` is mounted as a high performance XFS filesystem.
+
+The difference was staggering. While the original implementation for around 30GB of data without using the scratch disk took roughly 1200s (20 minutes) of runtime, the new implementation using the scratch disk took roughly 20s of runtime. **This was a speedup of 60x!**
+
+:::info[Key Idea]
+
+The point of the **scratch directory** is to have a locally mounted harddrive on the node for fast job related data storage. Since it is physically mounted, it has much better performance than using the GPFS storage, which is separate from the node and lives on a dedicated storage server cluster like `/lcrc`. <GreenHighlight>The network latency of communicating between servers adds a lot of overhead compared to simply storing files temporarily on scratch disk.</GreenHighlight>
+
+Here is a good [summary](https://ucsf-ti.github.io/tipcc-web/good-practices/using-local-scratch.html):
+
+> All nodes have their own local storage mounted as `/scratch`. The `/scratch` storage is fast - faster than system-wide storage such as home folders and lab storage - which make it ideal for holding intermediate data files. This will also lower the load on the system-wide storage and the local network. Using local `/scratch` is a win-win for everyone.
+
+With scratch directories, you do not need to worry about deleting files and cleaning up during the job, as it is automatically cleared once the job ends.
+
+I asked Jeremy whether there is a specific HPC doc that would teach you these things, but he said that he learned this all through trial and error. The docs might only allude to these things, so it would talk about the scratch directory, but only by looking more into why it is there, do you learn about these problems.
+
+:::
 
 At this point I realize I need to learn about the HPC system. More specifically the scratch space, GPFS filesystems.

@@ -18,6 +18,12 @@ If the file is on the same directory level as the current file, default vim has 
 
 My neovim setup comes installed with `neo-tree` which is a plugin to browse the file system while in neovim. This can be done by typing `:Neotree`. This by default opens a file system window on the left that displays your files <GreenHighlight>starting from the current working directory</GreenHighlight>. To open the bar while keeping focus on your current window use `:Neotree show`. If you want to navigate up a directory, you will have to provide a `dir` argument to neo-tree by simply passing in a directory path, so `:Neotree ../` will start a directory up from the current file. You can always change the cwd of the neotree window later by typing in `:Neotree somedir/` (note that relative filepaths will use your current cwd). If you want to look at your open buffers, you can also do `:Neotree buffers`. To close the neotree window, type `:Neotree close`.
 
+:::tip[Trick]
+
+With the cursor inside the Neotree side bar, you can fuzzy search for a specific file in the directory tree using the `f` key. It will list file results in the tree and you can navigate to that file instead of needing to constantly walk down the folders.
+
+:::
+
 ## Telescope
 
 Telescope is a `fzf` like fuzzy finder that is useful for navigating through lists of files, buffers, git commits and more. To open up Telescope plugin in Neovim to see what commands are available type `:Telescope`. This will open up a window where you can click into `find_files` for instance and navigate files, or `git_commits` to navigate through git history with diffs.

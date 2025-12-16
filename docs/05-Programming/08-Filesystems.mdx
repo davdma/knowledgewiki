@@ -1,0 +1,188 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Filesystems
+
+## Intro
+
+There are a variety of filesystems typically encountered:
+
+* EXT4 (Linux Default)
+* XFS (Modern high performance Linux FS)
+* NFS (Network File System)
+* VFAT
+* NTFS (Windows Default)
+* TMPFS
+* GPFS
+
+This document goes into some OS knowledge of filesystems as an abstraction, then investigates how each FS is mounted, its performance profile, and when to use it. At a lower level, how it organizes metadata, striping / allocation, caching and consistency.
+
+## Files and Directories
+
+Notes taken from: [OSTEP](https://pages.cs.wisc.edu/%7Eremzi/OSTEP/)
+
+Files at a low level are referenced via their **inode numbers**. A directory at a low level also have an inode number as its name, but contain human readable name to low level name pairs e.g. (`foo`, `10`), referring to nested files or directories. A **file descriptor** is an integer that is private to a process and used to access files in UNIX. In the process, there is a `struct file *ofile[NOFILE];` array of pointers indexed by the file descriptor tracking which files are open for that specific process. This is the **file descriptor table**, and each pointer goes to a system **open file table** managed by the kernel containing file offset, file status, pointer to inode, and reference count. The file descriptor table is unique to a process while multiple processes can have file descriptors pointing to the same open file table entry. By default, file descriptors `0`, `1`, `2` are open, corresponding to `stdin`, `stdout`, `stderr`.
+
+:::info[Key Idea]
+
+The FD table is an array of pointers inside a process control block to a FD entry `struct file` where `struct file` holds offset, flags, and inode pointer.
+
+The table is specific to a process, but the entries or `struct file` objects can be shared across processes.
+
+:::
+
+When calling `rm` on Linux, if you use `strace rm` you will see a call named `unlink()`. <GreenHighlight>Removing files requires unlinking from the underlying inode because it is possible for more than one file to point to the same inode</GreenHighlight>. With hard links, you create in the directory a name referring to the same inode number of the original file, which is equally legitimate as they are both just links to the inode. Hence, if the reference count is greater than one, `unlink` just decrements it, and only deletes the underlying inode when it reaches zero. With sym links the reference count is not incremented because it has its own inode storing the filepath string to the original file, the kernel only needs to fetch the path string from the sym link and go directly to the file.
+
+```bash
+# create hard link file2
+ln file file2
+```
+
+Now you have:
+```bash
+# look at the inode numbers of both files using -i flag
+ls -i file file2
+67158084 file
+67158084 file2
+```
+
+:::info[Key Idea]
+
+Creating files consists of:
+
+1. Making the inode with file info (size, location of blocks on disk, etc.)
+2. **Linking** human readable name to the inode and putting this link in a directory
+
+Hence the call to remove files is named `unlink()` because the inode is not necessarily removed in the case of multiple hard links.
+
+:::
+
+## Mounting
+
+OSTEP Chapter on [Mounting](https://pages.cs.wisc.edu/%7Eremzi/OSTEP/file-intro.pdf).
+
+Assembling a full directory tree from many underlying file systems requires two steps:
+
+1. The filesystem must be made.
+2. The filesystem must then be mounted so that they are accessible.
+
+To make a filesystem, most filesystems have a tool called `mkfs` that given a **device** and a filesystem type `ext3`, writes an empty filesystem with root directory onto that disk partition.
+
+Once the filesystem is made, you cannot yet access it. So it needs to be made accessible within the **unified** filesystem tree starting from root. To mount a file system is to make its contents accessible from somewhere in the root file system structure. The `mount` program takes an existing directory as a target **mount point** and essentially pastes the new file system onto that directory at that point.
+
+:::info[Key Idea]
+
+Mounting is all about attaching a physical device so that it can be made accessible in the filesystem.
+
+Unlike Windows where each device has a separate drive letter `C:`, `D:` etc., Unix allows for location mounting. This means that <GreenHighlight>Unix has one unified directory tree starting at the root with all storage devices attached somewhere inside the tree</GreenHighlight>. Thus even though data can live on different devices and filesystem formats, they are all accessible through one large directory tree.
+
+On Operating Systems like Linux, filesystems can be attached to points on the directory tree and detached again. 
+
+:::
+
+For example, an unmounted ext3 file system stored on device partition `/dev/sda1` with contents `a/foo` and `b/foo` from its root directory, we can mount this file system to the mount point `/home/users` using the following command:
+
+```bash
+# standard form is mount -t type device dir
+# -t flag specifies the type
+mount -t ext3 /dev/sda1 /home/users
+```
+
+Now we have the pathname `/home/users` referring to the device root directory, and `/home/users/a/foo` and `/home/users/b/foo` available in the directory tree. Note that we can actually also mount the same filesystem more than once.
+
+:::warning[Pitfall]
+
+The `/dev` directory in Linux contains special files representing **interfaces** to block devices that store or devices that transmit data like serial ports.
+
+`/dev/sda1` is not a directory but a **partition** which is a contiguous region of a storage device.
+
+`/dev/sda` refers to the first SCSI/SATA disk with `/dev/sdb` as the second, `/dev/sdc` third etc., and the number following it is the partition.
+
+These are all accessible under the `/dev` path of the root directory even when unmounted. **They do not contain the file system stored on the device, just a handle for the kernel to interact with the hardware!**
+
+An exception however, is `/dev/shm` which is a `tmpfs` virtual filesystem and not a device file. It is the standard location for shared memory.
+
+:::
+
+To see the mount points and the file system types used for each device, use the `findmnt` command. For instance:
+
+```bash
+# sample of findmnt output from Improv compute node
+TARGET                                SOURCE          FSTYPE   OPTIONS
+/                                     none            rootfs   rw
+|-/sys                                sysfs           sysfs    rw,nosuid,nodev,noexec,relatime
+| |-/sys/kernel/security              securityfs      security rw,nosuid,nodev,noexec,relatime
+| |-/sys/fs/cgroup                    tmpfs           tmpfs    ro,nosuid,nodev,noexec,mode=755
+| | |-/sys/fs/cgroup/systemd          cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,xa
+| | |-/sys/fs/cgroup/cpu,cpuacct      cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,cp
+| | |-/sys/fs/cgroup/perf_event       cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,pe
+| | |-/sys/fs/cgroup/freezer          cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,fr
+| | |-/sys/fs/cgroup/devices          cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,de
+| | |-/sys/fs/cgroup/net_cls,net_prio cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,ne
+| | |-/sys/fs/cgroup/memory           cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,me
+| | |-/sys/fs/cgroup/cpuset           cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,cp
+| | |-/sys/fs/cgroup/blkio            cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,bl
+| | |-/sys/fs/cgroup/rdma             cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,rd
+| | |-/sys/fs/cgroup/hugetlb          cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,hu
+| | `-/sys/fs/cgroup/pids             cgroup          cgroup   rw,nosuid,nodev,noexec,relatime,pi
+| |-/sys/fs/pstore                    pstore          pstore   rw,nosuid,nodev,noexec,relatime
+| |-/sys/firmware/efi/efivars         efivarfs        efivarfs rw,nosuid,nodev,noexec,relatime
+| |-/sys/fs/bpf                       bpf             bpf      rw,nosuid,nodev,noexec,relatime,mo
+| |-/sys/kernel/debug                 debugfs         debugfs  rw,relatime
+| | `-/sys/kernel/debug/tracing       tracefs         tracefs  rw,relatime
+| |-/sys/kernel/config                configfs        configfs rw,relatime
+| `-/sys/fs/fuse/connections          fusectl         fusectl  rw,relatime
+|-/proc                               proc            proc     rw,relatime
+| `-/proc/sys/fs/binfmt_misc          systemd-1       autofs   rw,relatime,fd=29,pgrp=1,timeout=0
+|   `-/proc/sys/fs/binfmt_misc        binfmt_misc     binfmt_m rw,relatime
+|-/dev                                devtmpfs        devtmpfs rw,nosuid,size=130400184k,nr_inode
+| |-/dev/shm                          tmpfs           tmpfs    rw
+| |-/dev/pts                          devpts          devpts   rw,relatime,gid=5,mode=600,ptmxmod
+| |-/dev/hugepages                    hugetlbfs       hugetlbf rw,relatime,pagesize=2M
+| `-/dev/mqueue                       mqueue          mqueue   rw,relatime
+|-/run                                tmpfs           tmpfs    rw,nosuid,nodev,mode=755
+|-/var/mmfs/tmp                       tmpfs           tmpfs    rw,relatime,size=1048576k
+|-/var/lib/nfs/rpc_pipefs             sunrpc          rpc_pipe rw,relatime
+|-/gpfs/fs2                           fs2             gpfs     rw,relatime
+|-/gpfs/fs3                           fs3             gpfs     rw,relatime
+|-/gpfs/fs0                           fs0             gpfs     rw,relatime
+|-/gpfs/fs1                           fs1             gpfs     rw,relatime
+|-/lcrc                               ldap:ou=auto.lcrc,ou=mounts-lcrc,dc=cels,dc=anl,dc=gov
+|                                                     autofs   rw,relatime,fd=7,pgrp=2745,timeout
+| `-/lcrc/group                       ldap:ou=auto.group,ou=mounts-lcrc,dc=cels,dc=anl,dc=gov
+|                                                     autofs   rw,relatime,fd=10,pgrp=2745,timeou
+|-/cvmfs                              /etc/auto.cvmfs autofs   rw,relatime,fd=13,pgrp=2745,timeou
+`-/scratch                            /dev/mapper/scratch-lvscratch
+                                                      xfs      rw,noatime,nodiratime,attr2,discar
+```
+
+## Swap Space
+
+To free up used memory pages used by a process, they are carefully copied to a <BlueHighlight>swap space</BlueHighlight>. This expands the amount of memory available to a process. As old pages get swapped out, the amount of memory allocated can easily exceed RAM as **demand paging** ensures the pages are loaded back in when needed.
+
+Since pages are swapped out to disk, and disk I/O is costly, addressing large amounts of memory will still be extremely expensive. Hence it is important to keep related pages close together in swap space so they can be swapped in together from disk.
+
+Each swap area is divided into page sized slots on disk (i.e. 4KB bytes on x86). The first slot is reserved for information about the swap area.
+
+When pages get swapped out, Linux uses the PTE to store info in order to locate the page on disk when it needs to be swapped back in.
+
+:::note[Detail]
+
+Linux can have up to 32 possible swap areas (each a separate file or partition). The metadata for each swap area/device is a `struct` protected by spinlocks for concurrent access. <BlueHighlight>Spinlocks</BlueHighlight> are locks that require the thread waiting for the lock to constantly check whether it is available, leading to busy waiting and "spinning" (aka checking the lock) which wastes CPU cycles.
+
+Why do OS kernels use **spinlocks**?
+
+While spinlocks waste CPU utilization for long blocking tasks, they are great for protecting small critical sections with low wait times. They are efficient without busy waiting because they have low context switching costs, which makes them perfect for the OS kernel. In the case of the swap device metadata, the protected critical section is short and contention is low, so spinlocks are used.
+
+:::
+
+## `tmpfs` Filesystem
+
+TMPFS is a temporary file system with <GreenHighlight>all of its files in virtual memory</GreenHighlight>. Hence all of the files are put on RAM (volatile storage) for speedy access, and no data persists on a hard drive. If a tmpfs instance is unmounted, all of the data is lost.
+
+`glibc` 2.2 and above expects `tmpfs` mounted at `/dev/shm` for POSIX shared memory.
+
+## GPFS Filesystem
+
+The GPFS known as <BlueHighlight>General Parallel File System</BlueHighlight> is developed by IBM and used in many HPC environments (e.g. Argonne uses GPFS filesystem). The GPFS is a **parallel filesystem** that provides high throughput access to data from multiple nodes.
+
+A common alternative to GPFS is Lustre, another parallel filesystem among HPC environments.

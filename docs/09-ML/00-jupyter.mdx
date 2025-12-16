@@ -1,0 +1,63 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Jupyter Notebook
+
+Some handy jupyter lab shortcuts for better notebook work in ML from this tutorial [here](https://discourse.jupyter.org/t/most-useful-keyboard-shortcuts-for-notebook-lab/18113).
+
+## Command & Edit Modes
+
+There are **two distinct modes** in jupyter notebooks. Different shortcuts apply based on which mode you are in (think vim modes). When your cursor is active inside a cell, you are in <BlueHighlight>edit mode</BlueHighlight>. You can also enter **edit mode** with `ENTER` or clicking on the cell editor area. If you escape with `ESC` then you are in <BlueHighlight>command mode</BlueHighlight>.
+
+:::info[Key Idea]
+
+**Command mode** gives you control over the notebook as a whole, while **edit mode** is specific to the cell that you are editing.
+
+Use **command mode** for notebook and cell actions and **edit mode** to type in individual cells.
+
+:::
+
+## Running Cells
+
+To run cell in either mode:
+- `CTRL+ENTER` runs cell
+- `SHIFT+ENTER` runs and moves to cell below
+
+## Command Mode Shortcuts
+
+The basic overview:
+1. Navigation: `ENTER`, `up/k`, `down/j`
+2. Saving: `s`
+3. Change cell types: `y`, `m`
+4. Cell creation: `a`, `b`
+5. Cell editing: `x`, `c`, `v`, `z`
+
+**Useful shortcuts I would use often**:
+- Go up and down cells with `j` and `k` like vim
+- <GreenHighlight>Create cells</GreenHighlight> **above** current cell with `a` and **below** current cell with `b`
+- <GreenHighlight>Change the cell type</GreenHighlight> to **markdown** with `m` or **code** with `y`
+
+Cell level operations:
+- Cut cells with `x` (good for delete as well)
+- Copy cells with `c`
+- Paste cells with `v`
+- Undo cell operation with `z`
+
+You can also merge cells:
+- Select multiple cells with `SHIFT+up` and `SHIFT+down`
+- Merge cells with `SHIFT+m`
+- On single cell `CTRL+SHIFT+m` to merge with the one below
+
+:::note[Detail]
+
+You can string these shortcuts together. An example is selecting multiple cells with `SHIFT+up` or `SHIFT+down` and converting all of them to markdown with `m`.
+
+:::
+
+Sometimes output of cells can long and clutter the screen:
+- Collapse and uncollapse output of a cell using `o`
+
+## Edit Mode Shortcuts
+
+Ones I commonly use:
+- Toggle between comment and uncommented code with `Ctrl+/`.
+- Split cells with `CTRL+SHIFT+-` at the cursor inside a cell.

@@ -1,0 +1,37 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# Data Formats
+
+## JSON
+
+JSON is a simple data format that sticks to human readable conventions. It is simple and readable because it adheres to a strict specification for the format. It only allows for the following data structures:
+
+* Object (dictionary `{}`)
+* Array (list `[]`)
+* Narrow types of values (strings, numbers, bool, null, nested objects and arrays)
+
+:::tip[Trick]
+
+Highly recommend consulting the diagrams on the [JSON standard website](https://www.json.org/json-en.html).
+
+:::
+
+An object is an **unordered** collection of key value pairs, while an array is an **ordered** list of values.
+
+Values can only be one of the following: strings (in double quotes `""`), number, boolean (`true`, `false`), `null`, or an nested object or array.
+
+An example json file with nested objects and arrays:
+
+```txt
+{"menu": {
+  "id": "file",
+  "value": "File",
+  "popup": {
+    "menuitem": [
+      {"value": "New", "onclick": "CreateNewDoc()"},
+      {"value": "Open", "onclick": "OpenDoc()"},
+      {"value": "Close", "onclick": "CloseDoc()"}
+    ]
+  }
+}}
+```

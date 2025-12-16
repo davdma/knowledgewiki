@@ -10,6 +10,8 @@ Here I list core commands (e.g. `ps`, `du`, `find`) grouped by functionality for
 
 Useful flags include `-F` for adding `/` to the names of directories, `-a` for printing all files and directories including hidden ones, `-l` gives long listing format with file permissions, user, group etc.
 
+You can also look at the inode numbers of each file using the `-i` flag.
+
 ### `pwd` Print Working Dir
 
 `pwd` prints the absolute filepath of the current working directory.
@@ -1171,6 +1173,32 @@ nohup python train_models.py &
 ```
 
 ## Useful Utilities
+
+### `strace` Trace Sys Calls
+
+A great tool for debugging and diagnostic is `strace` which runs a command, intercepts all system calls and signals a process receives, and prints them out. It is actually quite clear info because it shows you in sequence the name of the system call made by the program, its arguments, and the returned value.
+
+<details>
+<summary>What is a **system call**?</summary>
+
+In Linux, a <BlueHighlight>system call</BlueHighlight> aka syscall makes up the interface between the user program and the Linux kernel. It lets the user perform privileged instructions.
+
+For instance, `fork`, `execve`, `open`, `read`, `write` are all system calls.
+</details>
+
+An snippet of the `strace` output run on the bash command `strace cat test.txt`:
+
+```bash
+execve("/usr/bin/cat", ["cat", "test.txt"], 0x7fff6b0c9ac8 /* 46 vars */) = 0
+brk(NULL)                               = 0x5bd3f4e0e000
+arch_prctl(0x3001 /* ARCH_??? */, 0x7ffd7e4a1f00) = -1 EINVAL (Invalid argument)
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7d54d957a000
+access("/etc/ld.so.preload", R_OK)      = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/etc/ld.so.cache", O_RDONLY|O_CLOEXEC) = 3
+newfstatat(3, "", {st_mode=S_IFREG|0644, st_size=38388, ...}, AT_EMPTY_PATH) = 0
+mmap(NULL, 38388, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7d54d9570000
+close(3)                                = 0
+```
 
 ### `parallel` Run in Parallel
 

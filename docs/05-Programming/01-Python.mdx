@@ -39,6 +39,184 @@ source code -> bytecode -> interpreter loop execution
 
 A very useful source from Python docs: [the bytecode interpreter](https://github.com/python/cpython/blob/main/InternalDocs/interpreter.md).
 
+## Iterables, Iterators, Generators
+
+An <BlueHighlight>iterable</BlueHighlight> is any object that can return an iterator.
+
+An <BlueHighlight>iterator</BlueHighlight> is a helper object that produces the next value given an internal state. An iterator can be thought of as a lazy **value factory** that provides a value only when requested. It is possible for iterators to produce infinite sequences and never terminate.
+
+:::info[Key Idea]
+
+An **iterable** implements `__iter__()` which returns an iterator object, and an **iterator** implements `__next__()` and returns the next value, raising `StopIteration` exception when no more elements are available.
+
+You can manually get the iterator from an iterable using `iter()` and the next value from an iterator using `next()`.
+
+:::
+
+For instance, an iterator might be implemented using two distinct patterns. With pattern A, you have both the iterable and the iterator as one class - **the iterable is its own iterator**. In this case it can only be consumed once since the iterable maintains iterator state itself. In pattern B, you have a separate iterable and iterator, with `__iter__` returning a fresh iterator each time (this one is more Pythonic and canonical).
+
+```python
+# Pattern A: Iterable is the iterator
+class ChunkedRange:
+    def __init__(self, rangeStart, rangeStop, chunkSize):
+        self.rangeStart = rangeStart
+        self.rangeStop = rangeStop
+        self.chunkSize = chunkSize
+        self.cur_val = rangeStart
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.cur_val >= self.rangeStop:
+            raise StopIteration
+
+        lst = []
+        stop_val = self.cur_val + self.chunkSize
+        stop_val = min(stop_val, self.rangeStop)
+        while self.cur_val < stop_val:
+            lst.append(self.cur_val)
+            self.cur_val += 1
+
+        return lst
+
+
+# Pattern B: Iterable and iterator are separate
+class ChunkedRangeIterable:
+    def __init__(self, rangeStart, rangeStop, chunkSize):
+        self.rangeStart = rangeStart
+        self.rangeStop = rangeStop
+        self.chunkSize = chunkSize
+
+    def __iter__(self):
+        return ChunkedRangeIterator(self.rangeStart, self.rangeStop, self.chunkSize)
+
+
+class ChunkedRangeIterator:
+    def __init__(self, rangeStart, rangeStop, chunkSize):
+        self.rangeStart = rangeStart
+        self.rangeStop = rangeStop
+        self.chunkSize = chunkSize
+        self.cur_val = rangeStart
+
+    # An iterator is also an iterable!
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.cur_val >= self.rangeStop:
+            raise StopIteration
+
+        lst = []
+        stop_val = min(self.cur_val + self.chunkSize, self.rangeStop)
+        while self.cur_val < stop_val:
+            lst.append(self.cur_val)
+            self.cur_val += 1
+        return lst
+```
+
+Canonically, iterator classes even if it is defined separately from the iterable should still implement `__iter__()` and return `self`. This is because in Python <GreenHighlight>an iterator is an iterable over itself</GreenHighlight> and calling `iter()` on an iterator should returns itself (even if it is partially consumed).
+
+:::note[Detail]
+
+Iterables can return themselves as the iterator, by implementing both the `__iter__()` and the `__next__()` method, so `__iter__()` returns `self`.
+
+Calling `iter()` on an iterator should also return itself.
+
+:::
+
+So what happens during a **for loop**? The for loop calls `iter()` on the target object to get its iterator and then exhausts it. The syntax `for x in iterable` calls `iter(iterable)` to get an iterator, and then exhausts the iterator until `StopIteration` is thrown. Take the code `for x in range(0, 10)`. Here, the object `range(0, 10)` is an iterable which can provide an iterator when `iter(range(0, 10))` is called.
+
+A <BlueHighlight>generator</BlueHighlight> is a **subset of iterators**. They exist to provide a shortcut to building iterators, by allowing you to write an iterator without needing an explicit `__iter__()` and `__next__()` methods. It can take the form of a **generator function** (with `yield`) or a **generator expression**.
+
+For instance, you can write a generator function like so:
+
+```python
+def firstn(n):
+    num = 0
+    while num < n:
+        yield num
+        num += 1
+
+sum_of_first_n = sum(firstn(100000))
+```
+
+<GreenHighlight>When a generator function is called, it returns an iterator known as a generator</GreenHighlight>.
+
+A yield expression in any function body turns it into a generator function. Think of the `yield` as a `return` that does not end the function, it simply suspends the state. The next time the generator function executes, it proceeds from where it was last paused. When the generator reaches the end of the function or a return statement, it raises `StopIteration`.
+
+Hence, this will return the sequence `1, 2, 3`:
+
+```python
+def foo():
+    yield 1
+    yield 2
+    yield 3
+```
+
+A cool quirk of generator functions is that they are not just for one way communication from the generator to the caller with `next()`. They also enable the caller to communicate with the generator to modify its execution via a `send()`. A `yield` expression actually will take on the sent value after resuming. Thus generators are **coroutines**.
+
+<details>
+<summary>What is a coroutine?</summary>
+
+A coroutine is a program that allows execution to be paused and then resumed later.
+
+Python has bidirectional coroutines. They allow bidirectional communication at **suspension points** so that it is possible to resume execution with new information.
+</details>
+
+```python
+def echo(value=None):
+    while True:
+        try:
+            # here the expression (yield value) can change based on send
+            value = (yield value)
+        except Exception as e:
+            value = e
+```
+
+You can also create generator expressions which are additional shortcuts to build generators out of expressions similar to list comprehensions:
+
+```python
+# list comprehension
+doubles = [2 * n for n in range(1000)]
+
+# list from generator comprehension
+doubles = list(2 * n for n in range(1000))
+```
+
+:::info[Key Idea]
+
+**A generator is a special type of iterator**, but iterators are not necessarily generators. Generators provide a quick and easy way to create iterators and build lazy generation of values with the main advantage being low memory usage.
+
+:::
+
+:::tip[Trick]
+
+Generators are powerful tools to make your code more memory and CPU efficient. Whenever you see:
+
+```python
+def func():
+    result = []
+    for x in ...:
+        result.append(x)
+    return result
+```
+
+Try to replace it with:
+
+```python
+def iterator_func():
+    for x in ...:
+        yield x
+
+# when you need the full list just do
+result = list(iterator_func())
+```
+
+:::
+
+For more info, consult this helpful resource with diagrams [here](https://nvie.com/posts/iterators-vs-generators/).
+
 ## `zip()`
 
 A very useful utility function in Python is `zip()` which takes any number of iterables, and <GreenHighlight>combines the iterables into one **iterator** of tuples</GreenHighlight>. Once the shortest iterable is exhausted the iterator terminates (hence the iterables do not have to be the same length everywhere).
