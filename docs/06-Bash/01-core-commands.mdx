@@ -1006,6 +1006,13 @@ You can observe all processes running on the system, along with their command li
 
 ![htopscreenshot](/img/htop.png)
 
+Typically on HPC, I run this on the compute node to investigate memory problems:
+
+```bash
+# dma is my user id
+htop -u dma
+```
+
 ### `kill` Terminate Process
 
 The `kill` command sends a specified signal to a specified process or group of processes.
@@ -1063,6 +1070,23 @@ Swap:             0B          0B          0B
 ```
 
 The `shared` column includes `tmpfs` such as `/dev/shm` shared between processes. The `buff/cache` column is memory used for filesystem buffers or cache (speeds up disk I/O by caching files in RAM). For what actual memory you have free, look at `available` column.
+
+### `watch` Run Repeatedly
+
+:::tip[Trick]
+
+Use `watch -n` to monitor any command output over time.
+
+:::
+
+I often find myself checking the output of a command regularly for changes. For instance, when monitoring my shared memory utilization on a compute node with `df -h /dev/shm` I have to type it over and over to see if the usage jumps. However, this can be automated with `watch`.
+
+The `watch` command lets you run a command automatically per specified interval with the `-n` interval flag (in seconds):
+
+```bash
+# print shm usage every 1s
+watch -n 1 df -h /dev/shm
+```
 
 ## Execution
 

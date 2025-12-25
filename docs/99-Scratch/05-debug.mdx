@@ -72,7 +72,7 @@ for tmp_file in chunk_files:
 
 One possibility for this bottleneck is the networking bandwidth of GPFS on the Argonne clusters. I was making page by page writes to the filesystem by using my project directory `/lcrc/project/hydrosm/dma/data/preprocess`. Instead, I realized that I can greatly speedup the latency by using the local scratch space (~1TB in size) which is attached to the compute node. Since the harddrive is directly attached to the compute node and does not use GPFS, it is much much faster. With `findmnt` I learned that `/scratch` is mounted as a high performance XFS filesystem.
 
-The difference was staggering. While the original implementation for around 30GB of data without using the scratch disk took roughly 1200s (20 minutes) of runtime, the new implementation using the scratch disk took roughly 20s of runtime. **This was a speedup of 60x!**
+The difference was staggering. While the original implementation for around 30GB of data without using the scratch disk took roughly 1200s (20 minutes) of runtime, the new implementation using the scratch disk took roughly 20s of runtime. **This was a speedup of 60x!** I managed to save myself 72 hours of potential wait time processing the final large dataset.
 
 :::info[Key Idea]
 
@@ -89,3 +89,100 @@ I asked Jeremy whether there is a specific HPC doc that would teach you these th
 :::
 
 At this point I realize I need to learn about the HPC system. More specifically the scratch space, GPFS filesystems.
+
+## No Speedup from Multiple GPUs
+
+:::danger[Do Not Forget]
+
+**One of the most headache inducing bugs I encountered with a simple one line fix...**
+
+This serves as a strong anecdote of pursuing bugs through source code. Took me many hours of profiling and isolation to find an implicit `spawn` instead of `fork` multiprocessing context in conjunction with torch dataloader workers, leading to unwanted memory duplication and OOM.
+
+:::
+
+While investigating why my distributed training runs for my SAR flood segmentation model was not speeding up training relative to single GPU runs, I learnt a couple things about memory management. First, I found that in my `Dataset` initialization I was copying the memmapped array fully into RAM with `np.ascontiguousarray` which led to some obscure `SIGKILL` OOM errors. As you can see I intended it to work well in the fully in-RAM use case:
+
+```python
+class FloodSampleSARDataset(Dataset):
+    def __init__(self, sample_dir, channels=[True] * 8, typ="train", random_flip=False, transform=None, seed=3200, mmap_mode=None):
+        self.sample_dir = Path(sample_dir)
+        self.channels = channels + [True] * 6 # always keep label, tci, nlcd, scl
+        self.typ = typ
+        self.random_flip = random_flip
+        self.transform = transform
+        self.seed = seed
+        self.mmap_mode = mmap_mode
+        base = np.load(self.sample_dir / f"{typ}_patches.npy", mmap_mode=mmap_mode)
+
+        # One-time channel selection to avoid per-sample advanced indexing copies
+        if not all(self.channels):
+            # copies entire dataset as contiguous block in memory!
+            base = np.ascontiguousarray(base[:, self.channels, :, :])
+        self.dataset = base
+```
+
+What I forgot was the case where `mmap='r'` and the resulting memory mapped array would be loaded fully into memory via `np.ascontiguousarray(base[:, self.channels, :, :])`.
+
+Second, my mem-mapped approach with large datasets greater than RAM was problematic - it would be extremely slow and unusable due to being mem-mapped from GPFS. When switched to reading from scratch disk, the improved latency made it match the performance of RAM (or at least just marginally slower). I just needed to incur a partial cost of copying the data over to scratch at the beginning of dataset initialization.
+
+Finally, I found that the **MAIN REASON** why there was no speedup from distributed training. It was primarily caused by a counteracting explosion in the dataloading times from accidentally <GreenHighlight>spawning rather than forking worker processes</GreenHighlight>.
+
+:::info[Key Idea]
+
+Random mem-mapped array reads from GPFS is expensive due to higher latency, and switching to mem-mapping on scratch disk can lead to 10x speedup, and make mem-mapped training only marginally slower than in-memory training.
+
+:::
+
+The dataloading bottleneck in the distributed case was discovered via profiling on the single GPU vs the multi GPU. I found that on single GPU the forward and backward passes were the dominant bottleneck, while with the multi GPU the data loading was the bottleneck. The distributed training **as expected reduced the forward and backward pass latency by $\frac{1}{N}$**, but the dataloading time exploded. The reason for the dataloading slow down? The `num_workers=0` as opposed to `num_workers=4` made it such that there was no prefetching of batches in the background as the GPUs did the forward and backward passes.
+
+**Why can we not use `num_workers>0` in a DDP setting?** Setting the `num_workers` parameter to any positive integer crashes the job due to OOM. For my particular case, my dataset initialization puts 60GB of data into RAM. This is fine with `num_workers=0` as 4 python processes for 4 GPUs incurs `60 * 4 = 240GB` total RAM consumption. However, when `num_workers>0`, at iterator creation time child worker processes are spawned each with access to the underlying data:
+
+```python
+# at iterator instantiation child workers are spawned
+for batch_i, (X, y, _) in enumerate(train_loader):
+    # we crash before we even get to here
+```
+
+At dataloader instantiation `DataLoader(dataset, num_workers=4)` no workers are spawned, but at `iter(dataloader)` they are spawned. Note that `iter(dataloader)` is called implicitly in `for batch in dataloader`.
+
+What was happening was that within each rank process (from 1 to 4), the child worker processes for dataloading must also have access to the in-memory array from the dataset class, but processes have separate memory spaces. In the single GPU case I was running inside a default multiprocessing context of `mp.get_context("fork")`, and hence the dataloader defaulted to forking the worker processes. In linux child processes are forked with Copy-On-Write so that no pages need to be copied unnecessarily by child processes from the parent, hence the processes shared the 60GB. However, in aDDP setting we are running from within a spawned process from `mp.spawn`, the multiprocessing context by default is set to `mp.get_context("spawn")`. The drawback here is that spawned processes do not inherit the parent process image. In this case, the worker processes must initialize the dataset from scratch, copying all of the 60GB into its own memory. This fact was confirmed with python process monitoring in `htop -u dma`. I observed a massive explosion of memory to 480GB+ as each spawned worker process attempted to load the full 60GB array into memory at startup before the processes were killed (my job was only allocated 480GB of memory).
+
+After a lot of head scratching, the fix was actually just inserting a `multiprocessing_context` kwarg to switch the multiprocessing start method from `spawn` (which it was fetching from the current context) back to `fork`:
+
+```python
+train_loader = DataLoader(train_set,
+     batch_size=cfg.train.batch_size,
+     num_workers=0,
+     persistent_workers=False,
+     pin_memory=True,
+     sampler=DistributedSampler(train_set, seed=cfg.seed, drop_last=True),
+     multiprocessing_context='fork',
+     shuffle=False)
+```
+
+Now, by properly setting the batch size so that `processes * num_workers * prefetch_factor` batches fits in the 8GB shared memory, the distributed runs worked without memory bloat. With some adjustments of the batch size and the number of workers to optimize the dataloading and forward/backward times (these were the dominant bottlenecks), I got the expected 4x speedup with 4 GPUs - from the original ~58s per training epoch to ~12s per training epoch for each rank.
+
+:::info[Key Idea]
+
+Worker processes created using `fork` start method share the parent's memory, while worker processes created using `spawn` start method must reinitialize the dataset in memory. Check the multiprocessing context to make sure that you are using the correct method for memory efficiency.
+
+:::
+
+## See Job Memory Allocations
+
+A common issue encountered in HPC workflows is OOM errors which can be hard to debug. For example, I was in the middle of making a distributed training script work with single node multi-GPUs. I kept getting my spawned processes killed with zero traceback due to `SIGKILL`, which was frustrating. Presumably this could be caused by a OOM error in one of the processes.
+
+The first thing to do is use `qstat` to see the job allocation info including memory allocated, `ncpus`, and `ngpus`.
+
+```bash
+# -f flag provides detailed resource info
+qstat -f
+
+# grab resources for your specific job
+qstat -f JOBID | grep Resource_List
+```
+
+From within the job, you can also do:
+```bash
+qstat -f $PBS_JOBID | grep Resource_List
+```
