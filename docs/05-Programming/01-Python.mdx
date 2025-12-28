@@ -744,3 +744,30 @@ y[:, np.array([1, 3, 4])]
 The unused dimension, in this case the first dimension with size 5, is actually concatenated onto the end of the broadcasted index shape `(3)`, giving `(3) + (5) = (3, 5)`. This can trip people up because it can lead to entirely different order of dimensions than originally intended!
 
 :::
+
+### Numba JIT Compilation
+
+Often times computationally intense Python code is not easily vectorized and may have a lot of for loops with numpy operations sprinkled in. For example, this was the case when I was implementing an Enhanced Lee filter that computes each pixel based on surrounding window statistics (mean, std) with missing data edge cases. Since it was a major CPU bottleneck in preprocessing, I needed a quick way to speed up the filter. The easy solution was using a `@jit` decorator from `numba`.
+
+The `numba` package provides a <BlueHighlight>Just-In Time compiler</BlueHighlight> for Python that works well with NumPy arrays, functions, and loops. What happens is when a JIT function is called during execution, it is compiled to machine code "just-in-time" and cached, with subsequent calls with the same type arguments yielding machine code speed.
+
+:::info[Key Idea]
+
+For speeding up numerical computations in Python with numpy and loops, consider using JIT for machine code level speed.
+
+Read more about `numba` [here](https://numba.pydata.org/numba-doc/dev/user/5minguide.html)
+
+:::
+
+Adding JIT is as simple as adding a function decorator:
+
+```python
+from numba import jit
+
+@jit(nopython=True)
+def calculate(a):
+    trace = 0.0
+    for i in range(a.shape[0]):
+        trace += np.tanh(a[i, i])
+    return a + trace
+```

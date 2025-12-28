@@ -1,0 +1,93 @@
+import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
+
+# LLM Coding
+
+What are the best practices for using coding agents? This goes over agents, subagents, their prompts, contexts, memory, modes, permissions, tools, plugins, hooks, MCP, slash commands, workflows and retaining a mental model of the strengths and pitfalls of LLMs.
+
+Resources:
+
+* Claude [coding agent best practices](https://www.anthropic.com/engineering/claude-code-best-practices)
+* Claude [context engineering](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
+* Keep your eye out on the [invariants](https://pleasebringstrangethings.substack.com/p/keep-your-eye-on-the-invariants)
+* A [guide to Claude Code 2.0 and coding agents](https://sankalp.bearblog.dev/my-experience-with-claude-code-20-and-how-to-get-better-at-using-coding-agents/)
+
+## Key Ideas
+
+Recurring concepts for agentic coding:
+* <BlueHighlight>Context</BlueHighlight> - be specific and make clear all the invariants
+    * Optimize for the highest signal tokens in context
+* <BlueHighlight>Iterate</BlueHighlight> - do not be afraid to use multiple iterations to get to the desired result
+    * Course correction is part of the process
+* Plan & Act Workflow
+
+## Common Use Cases
+
+* **Git operations:** use coding agents to make git operations, especially more complex ones.
+* **Bash operations:** use coding agents to write and execute bash scripts, write `awk` scripts, etc.
+* **Codebase onboarding:** Coding agents are good tools to get onboarded into a large codebase quickly. Ask the agent the same question you would an engineer on the project when pair-programming.
+* **Jupyter notebooks:** Coding agents can also read and write jupyter notebooks.
+
+## Prompt Best Practices
+
+Contextual information:
+* What are the <BlueHighlight>invariants</BlueHighlight>? Invariants are things that must never change, and constrains the space of possible solutions, e.g. "The CSV must have these columns", "The argument must address this objection".
+* What are the task results for?
+* What is the end goal of the task? What does a successful task completion look like? 
+
+Important principles:
+* In the prompt describe the **constraints** i.e. what any admissible solution must satisfy
+* In the same vein bound the solution space by what is acceptable and unacceptable
+* Write specifications - be specific enough to guide behavior effectively
+
+Be specific about what you want the agent to do. Provide instructions as explicit steps if you want the agent to work the exact way you want it to.
+
+:::tip[Trick]
+
+After providing the full prompt, ask the agent in plan mode first if it has any **clarifying questions**. This allows you to fill in any context gaps in the prompt that the agent may need to successfully complete its task.
+
+:::
+
+You can provide **screenshots** or **visual mocks** and ask the agent to implement the mock.
+
+## Context Best Practices
+
+Context is a limited resource to models - at certain amounts of tokens, model exhibit **context rot**. Thus, it is important to curate what tokens are fed into the LLM. A common estimate for when context rot begins to occur is at 50-60% of the context window, though more realistic figures peg this threshold at 40%. The recommendation is that if you are giving any complex instructions, to avoid feeding any complex instructions after this mark and instead to start a new context.
+
+Another important point is to prefer detailed file context over high level compacted summaries. Often times people try to delegate summaries of files say from subagents before prompting for a task. But <GreenHighlight>it's important that the model goes through all of the relevant files by itself so that the ingested context can attend to each other</GreenHighlight>. This is important with attention because it involves context crossing with previous context - more pair-wise relationship leads to better reasoning and prediction due to the **self-attention mechanism** of transformers.
+
+## Refactoring
+
+Key tips:
+* Constrain agents to specific files, functions and modules
+* Review diffs like reviewing a junior's PR
+
+## TDD
+
+Test driven development paired with agentic coding is much more powerful. It is important to verify you have generated good tests before moving on to letting the agent write solutions to the tests.
+
+1. Ask agent to create tests based on expected input and outputs.
+2. Tell the agent to run the tests and confirm they fail.
+3. Once the tests are committed, ask the agent to write code to pass the tests, telling it not to modify tests.
+
+## Slash Commands
+
+<BlueHighlight>Slash commands</BlueHighlight> are pre-defined prompts that perform a specific task. They are often useful for automating very repetitive agent instructions that are often called upon across many different agentic workflows. For example, a useful custom slash command `/handoff` can prompt Claude to summarize everything from the current session with specific instructions before starting a fresh agent instance.
+
+:::tip[Trick]
+
+If you find yourself constantly prompting the same command over and over, it might be a good idea to turn it into a custom slash command.
+
+:::
+
+## Hooks
+
+Hooks are available in CC and Cursor. They let you run bash scripts at certain execution points in the agent lifecycle loop.
+
+For example, the `Stop` hook runs after Claude finishes responding, and `UserPromptSubmit` hook runs when the user submits a prompt before CC processes it. You can even add a "Do more" `Stop` hook to keep Claude Code running for hours.
+
+## Claude Code Features
+
+* `/context` to see current context usage
+* `/rewind` to go back to previous checkpoint
+* Search through previous prompts with `CTRL + R` (like GNU readline reverse search)
+* Type `ultrathink` in prompt for hard or rigorous tasks
