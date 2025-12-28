@@ -1,0 +1,83 @@
+/* Container with responsive 16:9 aspect ratio by default */
+.container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  margin: 1.5rem auto;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio (9/16 = 0.5625) */
+  background-color: var(--ifm-background-color);
+  border-radius: var(--ifm-global-radius);
+  overflow: hidden;
+  box-shadow: var(--ifm-global-shadow-lw);
+}
+
+/* When custom height is provided, remove aspect ratio padding */
+.container[style*="height"] {
+  padding-bottom: 0;
+}
+
+.iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--ifm-global-radius);
+}
+
+/* Loading skeleton */
+.loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skeleton {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--ifm-color-emphasis-200) 0%,
+    var(--ifm-color-emphasis-300) 50%,
+    var(--ifm-color-emphasis-200) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Error state */
+.error {
+  padding: 1rem;
+  margin: 1.5rem auto;
+  border: 1px solid var(--ifm-color-danger);
+  border-radius: var(--ifm-global-radius);
+  background-color: var(--ifm-color-danger-contrast-background);
+  color: var(--ifm-color-danger-contrast-foreground);
+  text-align: center;
+}
+
+.error p {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    margin: 1rem 0;
+  }
+}

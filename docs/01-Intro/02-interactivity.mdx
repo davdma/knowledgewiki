@@ -1,5 +1,7 @@
 import { BlueHighlight, GreenHighlight } from '@site/src/components/Highlight';
 import Quiz from '@site/src/components/Quiz';
+import YouTube from '@site/src/components/YouTube';
+import Twitter from '@site/src/components/Twitter';
 
 # Interactivity
 
@@ -17,9 +19,7 @@ With MDX you can generate a single reusable `<Quiz>` component that handles mult
 Generate 5 multiple-choice questions at the end of the following notes using the Quiz component.
 ```
 
-## Dynamic Programming Notes
-
-Dynamic programming solves problems by breaking them into overlapping subproblems...
+For example, take this Dynamic Programming quiz:
 
 <Quiz
   questions={[
@@ -45,3 +45,44 @@ Dynamic programming solves problems by breaking them into overlapping subproblem
     }
   ]}
 />
+
+## YouTube Videos
+
+You can embed YouTube videos directly in your notes using the `<YouTube>` component. Just extract the video ID from the YouTube URL:
+
+**YouTube URL formats:**
+- Standard: `https://www.youtube.com/watch?v=VIDEO_ID`
+- Short: `https://youtu.be/VIDEO_ID`
+
+**Basic usage:**
+```jsx
+<YouTube videoId="dQw4w9WgXcQ" />
+```
+
+**With custom dimensions:**
+```jsx
+<YouTube videoId="dQw4w9WgXcQ" width="800px" height="450px" />
+```
+
+**Example:**
+
+<YouTube videoId="dQw4w9WgXcQ" />
+
+## Tweets
+
+You can embed tweets using the `<Twitter>` component. Extract the tweet ID from the URL:
+
+**Twitter URL formats:**
+- Twitter: `https://twitter.com/username/status/TWEET_ID`
+- X: `https://x.com/username/status/TWEET_ID`
+
+**Usage:**
+```jsx
+<Twitter tweetId="1867863811514163456" />
+```
+
+The Twitter component automatically detects your site's light/dark theme and adjusts the tweet appearance accordingly.
+
+**Example:**
+
+<Twitter tweetId="2004607146781278521" width="75%"/>

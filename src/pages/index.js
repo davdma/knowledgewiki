@@ -11,7 +11,7 @@ function HomepageHeader() {
       <div className="container">
         <h1 className="hero__title">Knowledge Wiki</h1>
         <p className="hero__subtitle">
-          A knowledge repository for David's notes, built for easy browsing and active learning.
+          A notes repository built for easy browsing and active learning.
         </p>
         <div className={styles.bookContainer}>
           <div className={styles.book3d}>

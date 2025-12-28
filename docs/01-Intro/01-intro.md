@@ -1,6 +1,6 @@
 # The Knowledge Wiki
 
-The knowledge wiki is a centralized notes repo for anything I have learnt and am currently learning. Each folder represents a topic of interest with markdown files serving as individual sections within that topic. The repo serves as an active "learning log" that will continually evolve and grow with time. The markdown format is organized to be friendly for LLMs for AI-assisted note taking and quizzing.
+The wiki is a centralized notes repo for personal learning. Each folder represents a topic of interest with markdown files serving as individual sections within that topic. The repo serves as an active "learning log" that will continually evolve and grow with time. The markdown format is organized to be friendly for LLMs for AI-assisted note taking and quizzing.
 
 An example structure:
 

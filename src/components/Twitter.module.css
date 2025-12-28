@@ -1,0 +1,125 @@
+/* Container for Twitter embed */
+.container {
+  width: 100%;
+  margin: 1.5rem auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Wrapper for the tweet itself */
+.tweetWrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Force Twitter's iframe to respect container width */
+.tweetWrapper :global(iframe.twitter-tweet-rendered) {
+  margin: 0 auto !important;
+}
+
+/* Loading skeleton */
+.loading {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+  background-color: var(--ifm-background-color);
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skeletonHeader {
+  width: 40%;
+  height: 20px;
+  background: linear-gradient(
+    90deg,
+    var(--ifm-color-emphasis-200) 0%,
+    var(--ifm-color-emphasis-300) 50%,
+    var(--ifm-color-emphasis-200) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeletonText {
+  width: 100%;
+  height: 16px;
+  background: linear-gradient(
+    90deg,
+    var(--ifm-color-emphasis-200) 0%,
+    var(--ifm-color-emphasis-300) 50%,
+    var(--ifm-color-emphasis-200) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeletonText:last-of-type {
+  width: 80%;
+}
+
+.skeletonFooter {
+  width: 60%;
+  height: 16px;
+  margin-top: 0.5rem;
+  background: linear-gradient(
+    90deg,
+    var(--ifm-color-emphasis-200) 0%,
+    var(--ifm-color-emphasis-300) 50%,
+    var(--ifm-color-emphasis-200) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Error state */
+.error {
+  width: 100%;
+  max-width: 600px;
+  padding: 1rem;
+  margin: 1.5rem auto;
+  border: 1px solid var(--ifm-color-danger);
+  border-radius: var(--ifm-global-radius);
+  background-color: var(--ifm-color-danger-contrast-background);
+  color: var(--ifm-color-danger-contrast-foreground);
+  text-align: center;
+}
+
+.error p {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    margin: 1rem 0;
+  }
+
+  .loading {
+    max-width: 100%;
+  }
+
+  .error {
+    max-width: 100%;
+  }
+}
