@@ -129,7 +129,7 @@ Compressors like `gzip` by itself cannot do archiving. To compress multiple file
 
 The most frequently used operations are to **create**, **list**, and **extract** archives using `tar`, corresponding to `-c`, `-t` and `-x`. <GreenHighlight>You can only use one operational mode per command</GreenHighlight>.
 
-The most frequently used options on top of an operation are `--file` for specifying the name of the archive file and `--verbose`, corresponding to -f` and `-v`. It is recommended to always specify an archive file!
+The most frequently used options on top of an operation are `--file` for specifying the name of the archive file and `--verbose`, corresponding to `-f` and `-v`. It is recommended to always specify an archive file!
 
 For instances:
 
@@ -172,6 +172,20 @@ tar -czf archive.tar.gz foo bar
 
 # autocompress based on the suffix
 tar -caf archive.tar.gz foo bar
+```
+
+In many cases, you might also want to archive only a subset of files within a directory, and it can be a list that it cumbersome to specify directly in the command line. You can pass in the subset of files names via the `-T` flag to read file names in from a `.txt` text file:
+
+Instead of,
+
+```bash
+tar -czvf s2-dataset-v1.0.tar.gz imagery/s2_clouds_99pct_0_5/ imagery/s2_manual_0_5_15_precip/ imagery/s2_manual_2_4_100_others/ imagery/s2_manual_6_4_35_texas/ imagery/s2_manual_7_4_10_illinois/ labels/
+```
+
+You can just do:
+
+```bash
+tar -czvf s2-dataset-v1.0.tar.gz -T files_to_include.txt
 ```
 
 For extracting compressed files, there is no need to specify the compression type as `tar` will detect it based off file signature:

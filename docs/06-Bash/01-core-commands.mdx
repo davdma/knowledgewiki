@@ -154,6 +154,13 @@ A common use case is to find files matching a pattern and delete them all. This 
 find . -name "*.txt" -delete
 ```
 
+Another common use case is to delete **empty** directories or files. This can be done with the `-empty` option:
+
+```bash
+# delete all empty directories, recursively
+find . -type d -empty -delete
+```
+
 You can also perform actions on results via `-exec` for executing a command and `{}` where the filename would be passed in. For instance a longer way of deleting files is to call `rm` on each returned filename:
 
 ```bash
@@ -1087,6 +1094,20 @@ The `watch` command lets you run a command automatically per specified interval 
 # print shm usage every 1s
 watch -n 1 df -h /dev/shm
 ```
+
+Note that quotes can be important in controlling parsing for more complicated commands. The rule of thumb is that if a command takes another command as input, you might need to quote it:
+
+:::warning[Pitfall]
+
+A common mistake is to include more than one command e.g. shell pipelines in the `command` arg like `watch -n 1 qstat | grep dma`. This will not work.
+
+Chained bash commands must be placed inside quotes like so:
+
+```bash
+watch -n 1 "qstat | grep dma"
+```
+
+:::
 
 ## Execution
 

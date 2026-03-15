@@ -186,3 +186,221 @@ From within the job, you can also do:
 ```bash
 qstat -f $PBS_JOBID | grep Resource_List
 ```
+
+## Training with Large Dataset Shards
+
+Given the size of the Swing node RAM (~480GB for 4 GPUs on one node), I never had an issue with fitting my datasets entirely into memory. This was until I began training my CVAE despeckler on large scale GIS data. For pretraining my general purpose SAR despeckler alone, I collected 524GB total of SAR data across the CONUS for pretraining, consisting of millions of single and multitemporal composite patches. For the first time, the data could not all fit into memory at once, and I needed to be clever with how I handled the large dataset to train the model while maintaining optimal performance.
+
+Instead of having the entire array in one large `.npy` file, I sharded the dataset into 2GB `.npy` files, and used the `IterableDataset` provided by PyTorch.
+
+Unlike a traditional map-style dataset with pre-defined key-value pairs, iterable-style datasets do not have pre-implemented PyTorch shufflers. Since the `IterableDataset` serves up samples lazily through an iterator, we must in its implementation take ownership of any sample shuffling if needed. Hence, each epoch, `set_epoch()` must be called on the `IterableDataset` to seed the rng for epoch specific shuffling.
+
+Furthermore, we must be careful not to create duplication of data across DDP ranks and dataloading workers processes if `num_workers > 0`. To achieve this, the list of shard files were first distributed randomly across the ranks. Then within each rank, the shards were distributed among the worker processes.
+
+:::info[Key Idea]
+
+With DDP, it is important for each rank to have an equal number of samples (not batch sizes) to ensure that there is **the same number of forward and backward steps**. This prevents cases where the gradient all reduce leads to a hang because some ranks with an extra batch are waiting on some other rank with their batches fully exhausted.
+
+This is not the case for splitting data among worker processes. Uneven amounts of batches between workers will only affect data loading time.
+
+:::
+
+The final implementation allowed the entire 500GB dataset to be loaded independently across 8 GPU processes per epoch without any bottlenecks with `num_workers=4`. In fact, after profiling, the dataloading was only 0.5% of the total epoch time compared to the forward and backward passes which contributed 97+% of the epoch training time, hence I did further performance optimizations with AMP and TF32 documented [here](#automatic-mixed-precision-amp). The class is below:
+
+```python
+class ShardedConditionalSARDataset(IterableDataset):
+    """Multitemporal SAR dataset for conditional speckled SAR generation.
+    This implementation yields samples from a list of sharded .npy files.
+    Handles both multiprocessing workers num_workers > 0 and distributed training
+    rank processes. Will partition shards by DDP rank first then samples by worker id.
+
+    NOTE: Shard files must contain the same number of samples, (N, 4, H, W).
+
+    NOTE: Each entire shard is loaded into memory sequentially, with shuffling
+    done in blocks.
+
+    The class assumes 4 channels being:
+    1. Single-slice SAR VV
+    2. Single-slice SAR VH
+    3. Composite SAR VV
+    4. Composite SAR VH
+    
+    Parameters
+    ----------
+    shards : List[Path]
+        List of shard file paths of .npy files.
+    block_size : int
+        Number of samples to load and shuffle.
+    rank : int
+        DDP rank.
+    world_size : int
+        Total number of DDP processes.
+    transform : obj
+        PyTorch transform.
+    random_flip : bool
+        Randomly flip patches (vertically or horizontally) and rotate for augmentation.
+    seed : int
+    """
+    def __init__(self, shards, block_size, rank, world_size, epoch=0, transform=None, random_flip=False, seed=3200, mmap_mode=None):
+        super().__init__()
+        self.shards = shards
+        self.block_size = block_size
+        self.rank = rank
+        self.world_size = world_size
+        self.epoch = epoch
+        self.transform = transform
+        self.random_flip = random_flip
+        self.seed = seed
+        self.mmap_mode = mmap_mode
+
+        # compute shard size
+        arr = np.load(self.shards[0], mmap_mode="r")
+        self.shard_size = arr.shape[0]
+        del arr
+    
+    def __len__(self):
+        return self.shard_size * (len(self.shards) // self.world_size)
+    
+    def set_epoch(self, epoch):
+        self.epoch = epoch
+
+    def __iter__(self):
+        worker_info = get_worker_info()
+        worker_id = worker_info.id if worker_info is not None else 0
+        num_workers = worker_info.num_workers if worker_info is not None else 1
+
+        rng = Random(self.seed + self.epoch)
+        shuffled_shards = rng.sample(self.shards, len(self.shards))
+
+        # partition shuffled shards among ranks
+        num_shards_per_rank = len(shuffled_shards) // self.world_size
+        rank_shuffled_shards = shuffled_shards[self.rank * num_shards_per_rank:(self.rank + 1) * num_shards_per_rank]
+
+        # partition rank shards among workers
+        # walk through shards in blocks and shuffle blocks in RAM
+        worker_shards = rank_shuffled_shards[worker_id::num_workers]
+        for shard_path in worker_shards:
+            shard_patches = np.load(shard_path, mmap_mode=self.mmap_mode)
+
+            n = shard_patches.shape[0]
+            for i in range(0, n, self.block_size):
+                end = min(i + self.block_size, n)
+                # materialize block in memory
+                block = np.array(shard_patches[i:end], copy=None)
+
+                # shuffle block
+                idx = np.arange(block.shape[0])
+                rng.shuffle(idx)
+                block = block[idx] # (block_size, 4, H, W)
+
+                block_tensor = torch.from_numpy(block)  # (block_size, 4, H, W)
+
+                for j in range(block_tensor.shape[0]):
+                    sar_image = block_tensor[j, :2]
+                    clean_sar_image = block_tensor[j, 2:4]
+
+                    if self.transform:
+                        # for standardization only standardize the non-binary channels!
+                        sar_image = self.transform(sar_image)
+                        clean_sar_image = self.transform(clean_sar_image)
+
+                    if self.random_flip:
+                        sar_image, clean_sar_image = self.hv_random_flip_rotate(rng, sar_image, clean_sar_image)
+                    yield sar_image, clean_sar_image
+    
+    def hv_random_flip_rotate(self, rng, x, y):
+        # Random horizontal flipping
+        if rng.random() > 0.5:
+            x = torch.flip(x, [2])
+            y = torch.flip(y, [2])
+
+        # Random vertical flipping
+        if rng.random() > 0.5:
+            x = torch.flip(x, [1])
+            y = torch.flip(y, [1])
+
+        # Random 90-degree rotations (0, 90, 180, or 270 degrees)
+        k = rng.randint(0, 3)  # number of 90° rotations
+        if k > 0:
+            x = torch.rot90(x, k, [1, 2])
+            y = torch.rot90(y, k, [1, 2])
+
+        return x, y
+```
+
+## Automatic Mixed Precision (AMP)
+
+While profiling the bottlenecks in the CVAE DDP runs with large pretraining dataset (~500GB of patch data), the bottleneck was not in the dataloading (~5-7%) but in the forward and backward passes (~93-95%). The solution for speeding up training was to increase the batch size to saturate the GPU and use <BlueHighlight>Automatic Mixed Precision</BlueHighlight> training that uses `torch.float16` or `torch.bfloat16` instead of `torch.float32` for certain operations like linear layers and convolutions.
+
+From the [AMP docs](https://docs.pytorch.org/tutorials/recipes/recipes/amp_recipe.html), this speedup is most effective when the GPU is saturated and the Tensor-Core architecture is one of Volta, Turing, or Ampere. Based on the `nvidia-smi -q` outputs, the GPU architecture on the Swing cluster was `Product Architecture: Ampere`, which matched as a prime candidate for this method.
+
+:::info[Key Idea]
+
+Rarely do most deep learning neural networks require numerical accuracy of `torch.float32`. Using a module like `torch.amp` can make it easy to get speed and memory boost from using lower precision dtypes while preserving convergence, and are used for larger, more powerful models.
+
+A great blog post on why it is necessary can be found [here](https://pytorch.org/blog/what-every-user-should-know-about-mixed-precision-training-in-pytorch/).
+
+:::
+
+Implementing AMP involves using `torch.autocast` as a context manager to determine when ops are demoted to lower precision:
+
+```python
+for epoch in range(num_epochs):
+    for X, y in dataloader:
+        with torch.autocast(device_type=device, dtype=torch.float16):
+            output = model(input)
+            loss = loss_fn(output, y)
+
+        loss.backward()
+        opt.step()
+        opt.zero_grad()
+```
+
+Adding a grad scaler can prevent small gradients becoming zero (underflowing) with lower dynamic range (typically with `float16`). The grad scaler is used to scale the loss (which consequently scales the gradients), and subsequently unscaling the computed gradients before updating weights:
+
+```python
+# grad scaling prevents small gradients becoming zero (underflowing)
+scaler = torch.amp.GradScaler()
+
+for epoch in range(num_epochs):
+    for X, y in dataloader:
+        with torch.autocast(device_type=device, dtype=torch.float16):
+            output = model(input)
+            loss = loss_fn(output, y)
+
+        # loss gets scaled - backward on scaled loss = scaled gradients
+        scaler.scale(loss).backward()
+        
+        # scaler.step() unscales gradients of parameters
+        scaler.step(opt)
+        
+        # update scale for next iteration
+        scaler.update()
+
+        opt.zero_grad()
+```
+
+:::note[Details]
+
+I would also recommend looking at the `GradScaler` source code [here](https://github.com/pytorch/pytorch/blob/v2.9.1/torch/amp/grad_scaler.py#L53) which goes more into detail at what happens with each call. For instance if you call `scaler.unscale_(opt)` explicitly (e.g. in order to clip gradients before updating), then `scaler.step(opt)` will not unscale again.
+
+:::
+
+An important tradeoff is picking `float16` or `bfloat16`, the former for more precision, the latter for more dynamic range. AMP `float16` might not work with every model, and even with grad scaling to prevent underflow, this may instead cause overflow due to the numerical max of 65504 in fp16. NaNs in the loss or gradients may indicate model might not be compatible with fp16. <GreenHighlight>The benefit of BF16 is that it has the same dynamic range as FP32 (same number of exponent bits)</GreenHighlight>.
+
+With Ampere it also worth considering that [TF32 Tensor Cores](https://developer.nvidia.com/blog/accelerating-ai-training-with-tf32-tensor-cores/) (if not already on by default) can be used with the same dynamic range as `float32` except with slightly less precision (10 instead of 23 mantissa bits) - **it provides essentially a free speedup**.
+
+:::info[Key Idea]
+
+**Important:** Check if TF32 is being used in runtime using `torch.backends.cuda.matmul.allow_tf32` (for `matmul`) and `torch.backends.cudnn.allow_tf32` for (`cuDNN` convolutions). When I checked with my PyTorch version (2.3.0) the `matmul` TF32 was disabled by default. <GreenHighlight>In my CVAE training loop simply enabling TF32 for matrix multiplies resulted in a **1.20x** speedup for backpropagation!</GreenHighlight>
+
+:::
+
+Set to TF32 on Ampere:
+
+```python
+torch.backends.cuda.matmul.allow_tf32 = True
+torch.backends.cudnn.allow_tf32 = True
+```
+
+![tensor32](/img/tf32.png)
