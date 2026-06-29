@@ -16,3 +16,92 @@ Additional notes:
 - Stacked diffs are often supported by specific tooling like `git-stack`, `Phabricator` and more to help manage its complexity.
 - Diffs can either depend on prior diffs or be independent. Independent diffs can be reviewed and approved, but dependent ones still need to wait for their prerequisites to merge before they ultimately are merged.
 - Stacked diffs typically will use **rebase-and-merge** (just typical rebase + merge fast forward pattern) rather than merge commits to maintain linear history.
+
+## Git Worktrees
+
+What are <BlueHighlight>Git Worktrees</BlueHighlight>?
+
+When you work with Git you usually have:
+* One working directory
+* One active branch at one time
+* Switching branches changes all files in that directory
+
+The worktree model lets you have:
+* Multiple working directories from the same repository
+* Different branches checked out simultaneously
+* Independent work in each directory
+
+Without worktrees you basically will need to checkout one branch at a time and work on one feature at a time. To switch between them you have to stash the current changes and checkout the other branch. Then later come back, `git stash pop` and restore the previous work state. This causes a lot of context switching overhead and prevents simultaneous development.
+
+Each worktree can be thought of as a <GreenHighlight>parallel universe which shows your project at a specific branch or commit and which does not affect other parallel universes</GreenHighlight>.
+
+To use worktrees, simply start by running:
+
+```bash
+# Create separate worktrees
+git worktree add ../project-feature-a feature-a
+git worktree add ../project-feature-b feature-b
+
+# This creates two worktree directories
+cd ../project-feature-a
+cd ../project-feature-b # work on a different feature in another terminal
+```
+
+When a git worktree is created you have a <GreenHighlight>new directory with all project files</GreenHighlight>. It is linked to the main repository, so shares in the cumulative Git history.
+
+One important constraint is that Git **prevents the same branch from being checked out in multiple worktrees**. The rule is <GreenHighlight>one branch per worktree</GreenHighlight>.
+
+```bash
+# works
+git worktree add ../repo-feature-a feature-a
+
+# this fails if feature-a has already been checked out
+git worktree add ../repo-feature-a-copy feature-a
+# Error: 'feature-a' is already checked out
+```
+
+Some important commands to learn:
+
+```bash
+# List all worktrees
+git worktree list
+
+# Remove a completed worktree
+git worktree remove ../monolith-feature-123
+
+# cleanup any leftover references
+# only necessary if worktrees are manually removed without using worktree remove command
+git worktree prune
+```
+
+:::tip[Trick]
+
+Recommended to use proper naming conventions so worktrees are clear in terms of their purpose and branch:
+
+```bash
+# Good worktree names
+../monolith-feature-auth           # Feature-based
+../monolith-bugfix-12345          # Issue-based
+../monolith-hotfix-critical       # Purpose-based
+../monolith-experiment-new-arch   # Experiment-based
+
+# Avoid
+../temp                           # Too generic
+../test                          # Unclear purpose
+../monolith                      # Confusing with main
+```
+
+The project can be organized like so:
+
+```txt
+# Recommended structure
+projects/
+├── monolith/                    ← Main repository
+├── monolith-feature-auth/       ← Feature worktree
+├── monolith-feature-payments/   ← Another feature
+└── monolith-hotfix-urgent/      ← Hotfix worktree
+```
+
+:::
+
+For more info, consult the source [here](https://gist.github.com/ashwch/946ad983977c9107db7ee9abafeb95bd).
