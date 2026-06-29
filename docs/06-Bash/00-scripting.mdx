@@ -41,9 +41,11 @@ Many of the system command exist in compiled form on the system (you can find th
 
 For instance when you run `find`, the shell forks, then the child process loads the `find` program into memory and sets up command line args.
 
-:::info[Key Idea]
+:::note[Detail]
 
-Blank...
+When a program being executed is a shell script, bash creates a new bash process using a **fork**. <BlueHighlight>The subshell then reads from the shell script line by line and interpreted and executed **as if they would have come directly from the keyboard.**</BlueHighlight>
+
+Once complete, the subshell terminates and the parent shell awakes and displays a new prompt.
 
 :::
 
@@ -72,6 +74,53 @@ Or invoke a standalone `awk` program with,
 
 ```bash
 #! /bin/awk - f
+```
+
+## Bash Scripts
+
+Shell functions are ways to group commands for later execution. When the name of a shell function is called, the list of commands under that function name is executed. They are executed in the current shell context, and no new process is created to interpret them.
+
+Treat shell functions like mini scripts. They can accept params, and use variables only known within the function (via `local` shell built-in) and then return values to the calling shell.
+
+The syntax is:
+
+```bash
+function FUNCTION { COMMANDS; }
+```
+
+OR
+
+```bash
+FUNCTION () { COMMANDS; }
+```
+
+:::warning[Pitfall]
+
+The curly braces must be separated from the body by spaces in order to be interpreted correctly. The body of a function must also end in a semicolon or a newline.
+
+:::
+
+A simple example of a shell function:
+
+```bash title="script.sh"
+#!/bin/bash
+
+echo "Positional parameter 1 in the script is $1"
+
+test () {
+    echo "Positional parameter 1 in the function is $1"
+    RETURN_VALUE=$?
+    echo "The exit code of this function is $RETURN_VALUE."
+}
+
+test other_param
+```
+
+```bash
+./script.sh parameter1
+# Positional parameter 1 for the script is parameter1
+# Positional parameter 1 in the function is other_param
+# The exit code of this function is 0
 ```
 
 ## Commands and Args
@@ -150,11 +199,59 @@ What are each of the glob special characters and their function?
 - `[!...]` matches a single character that is in the complement of the set of characters
 - `[0-9]` or any two characters separated by `-` denote a range. For example `[A-Fa-f0-9]` is equivalent to `[ABCDEFabcdef0123456789]`
 
+## File Descriptors
+
+Remember the 3 standard file descriptors:
+* `0` = `stdin`
+* `1` = `stdout`
+* `2` = `stderr`
+
+Another important constant worth remembering:
+* `/dev/null` represents a special sink device. Anything written to it is discarded, e.g. `command >/dev/null`.
+
+### Redirection Basics
+
+For redirection `>` equates to `1>` which is to send `stdout` to a file. Pipes like `|` connects `stdout` of one command to the `stdin` of the next.
+
+:::tip[Trick]
+
+Remember that double `>>` appends while single `>` overwrites.
+
+:::
+
+Useful redirection syntax:
+* `> file` sends `stdout` to file (overwrite)
+* `>> file` sends `stdout` to file (append)
+* `2> file` sends `stderr` to file (overwrite)
+* `2>> file` sends `stderr` to file (append)
+* `2>&1` means redirect `stderr` to where `stdout` is going.
+
+Using a `<` redirect is to have commands read from file:
+* `< file` gets `stdin` from file
+* `command < input.txt` runs command by consuming file's contents
+* `wc -l < input.txt` counts number of lines from `input.txt`
+
+Some more useful examples:
+
+```bash
+command >out.log 2>err.log  # split stdout and stderr to different files
+command >all.log 2>&1       # combine both stdout and stderr to all.log
+command 2>&1 | tee log.txt  # combine both, pipe to log.txt while printing to terminal
+command 2>/dev/null         # discard stderr
+```
+
 ## Job Control
 
 Bash allows users to selectively suspend and resume processes through <BlueHighlight>job control</BlueHighlight>. Each **job** is associated with a **pipeline** aka a string of commands chained with `|` (stdout) pipes or `|&` (stdout + stderr) pipes.
 
 ### Foreground, Background Processes
+
+<details>
+<summary>What is the difference between `Ctrl + Z` and `Ctrl + C` in Unix?</summary>
+
+The difference is that `Ctrl + Z` suspends a process by sending it `SIGTSTP` while `Ctrl + C` kills a process by sending `SIGINT`. Processes receiving `SIGINT` can be intercepted by a program so it can clean itself up before exiting, or choose not to exit, while the `SIGTSTP` signal cannot be intercepted by the program.
+
+</details>
 
 The implementation for job control is that each process is given a **process group ID**. Processes with the same process group ID are part of the same process group. <GreenHighlight>Foreground and background processes are based upon whether the process shares the current terminal process group ID</GreenHighlight>.
 

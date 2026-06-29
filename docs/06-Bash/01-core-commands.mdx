@@ -416,6 +416,39 @@ Some useful `cat` flags of note:
 
 :::
 
+### `tee` Stream to `stdout` and files
+
+`tee` is a very useful command used by engineers to write the `stdin` stream to both `stdout` and one or more files simultaneously.
+
+```bash
+make 2>&1 | tee build.log
+
+# can also save to multiple files
+command | tee file1 file2 file3 >/dev/null
+```
+
+:::info[Key Idea]
+
+When you want to echo the output and write to a file at the same time use `tee`.
+
+Why is it named `tee`? `tee` stands for "T-shaped" - one input followed by multiple outputs.
+
+:::
+
+Most important flags are `-a` and `-i`. Use flag `-a` for appending to files, e.g. `tee -a file.log`. Use flag `-i` as in `--ignore-interrupts` to ignore `SIGINT`.
+
+:::tip[Trick]
+
+`tee` only sees what arrives in `stdin`. To capture the `stderr` as well, redirect:
+
+```bash
+command 2>&1 | tee log.txt
+```
+
+Here `2>&1 | tee` merges `stderr` into `stdout` and then pipes both into `tee`.
+
+:::
+
 ### `less` Viewing Files
 
 `less` is for viewing text files efficiently, great for quick inspection of large files. As opposed to text editors like vim, `less` does not load the entire input file when called, but displays the content one page at a time.
@@ -930,6 +963,24 @@ curl "http://{one,two}.example.com" -o "file_#1.txt"
 ### `ping`
 ### `netstat`
 ### `ssh`
+### `autossh` Maintain SSH
+
+The command `autossh` is a wrapper around `ssh` that monitors and restarts `ssh` sessions and tunnels that are dropped.
+
+For instance, instead of trying to keep a reverse SSH session up with `ssh -R 8642:localhost:8642 ai4ai`, you can maintain the SSH session indefinitely via:
+
+```bash
+autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 3" -N -R 8642:localhost:8642 ai4ai
+```
+
+The useful flags are:
+* `-M port[:echo_port]` sets the base monitoring port. This is typically disabled via setting the monitoring port to `0`, hence `-M 0` above.
+
+These are standard SSH flags:
+* `-o` flag is used to specify options in format in the configuration file.
+* `-N` do not execute a remote command. When the goal is just to establish a reverse SSH tunnel you don't need a shell on the remote side this avoids setting up a remote shell or command on server side when SSH is made.
+* `-R [bind_address:]port:host:hostport` argument for remote port forwarding (aka reverse SSH)
+
 ### `scp`
 
 ## System Monitoring
